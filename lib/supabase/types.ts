@@ -1,4 +1,6 @@
 export type EventStatus = "draft" | "published" | "past";
+export type VideoProvider = "youtube" | "vimeo" | "mp4" | "embed";
+export type VideoAspectRatio = "auto" | "16:9" | "9:16" | "4:5" | "1:1";
 
 export type EventRecord = {
   id: string;
@@ -12,10 +14,21 @@ export type EventRecord = {
   city: string | null;
   image_url: string | null;
   ticket_url: string | null;
+  showpass_widget_code: string | null;
   status: EventStatus;
   featured: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type EventVideoRecord = {
+  id: string;
+  event_id: string;
+  url: string;
+  provider: VideoProvider;
+  aspect_ratio: VideoAspectRatio;
+  sort_order: number;
+  created_at: string;
 };
 
 export type ServiceRecord = {
@@ -58,6 +71,7 @@ export type Database = {
   public: {
     Tables: {
       events: Table<EventRecord>;
+      event_videos: Table<EventVideoRecord>;
       services: Table<ServiceRecord>;
       gallery: Table<GalleryRecord>;
       site_settings: Table<SiteSettingRecord>;

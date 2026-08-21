@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { EventRecord, GalleryRecord, ServiceRecord } from "@/lib/supabase/types";
+import type { EventRecord, EventVideoRecord, GalleryRecord, ServiceRecord } from "@/lib/supabase/types";
 
 const now = new Date().toISOString();
 
@@ -17,6 +17,7 @@ export const fallbackEvents: EventRecord[] = [
     city: "Niagara Falls, Ontario, Canada",
     image_url: "/images/concert-hero.jpg",
     ticket_url: null,
+    showpass_widget_code: null,
     status: "published",
     featured: true,
     created_at: now,
@@ -34,6 +35,7 @@ export const fallbackEvents: EventRecord[] = [
     city: "Niagara Falls",
     image_url: "/images/crowd.jpg",
     ticket_url: null,
+    showpass_widget_code: null,
     status: "past",
     featured: false,
     created_at: now,
@@ -51,6 +53,7 @@ export const fallbackEvents: EventRecord[] = [
     city: "Niagara Region",
     image_url: "/images/stage.jpg",
     ticket_url: null,
+    showpass_widget_code: null,
     status: "published",
     featured: false,
     created_at: now,
@@ -132,6 +135,20 @@ export async function getPublishedEventBySlug(slug: string) {
     }
   } catch { /* fallback below */ }
   return fallbackEvents.find((event) => event.slug === slug) ?? null;
+}
+
+export async function getEventVideos(eventId: string): Promise<EventVideoRecord[]> {
+  try {
+    const supabase = await createClient();
+    if (!supabase) return [];
+    const { data, error } = await supabase
+      .from("event_videos")
+      .select("*")
+      .eq("event_id", eventId)
+      .order("sort_order");
+    if (error) return [];
+    return (data || []) as EventVideoRecord[];
+  } catch { return []; }
 }
 
 export async function getActiveServices() {

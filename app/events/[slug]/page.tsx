@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CalendarDays, MapPin } from "lucide-react";
-import { getPublishedEventBySlug } from "@/lib/site-data";
+import { ResponsiveVideo } from "@/components/ResponsiveVideo";
+import { ShowpassWidget } from "@/components/ShowpassWidget";
+import { parseShowpassWidgetCode } from "@/lib/showpass";
+import { getEventVideos, getPublishedEventBySlug } from "@/lib/site-data";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -28,6 +31,8 @@ export default async function EventDetailPage({ params }: Props) {
   const { slug } = await params;
   const event = await getPublishedEventBySlug(slug);
   if (!event) notFound();
+  const videos = await getEventVideos(event.id);
+  const showpassConfig = parseShowpassWidgetCode(event.showpass_widget_code);
   const name = event.title.split(" ");
   return (
     <main className="event-detail">
@@ -42,10 +47,18 @@ export default async function EventDetailPage({ params }: Props) {
             <p><MapPin />{event.venue || "Venue to be announced"}<br /><span>{[event.address, event.city].filter(Boolean).join(", ")}</span></p>
           </div>
           <p className="detail-description">{event.description}</p>
-          {event.ticket_url && <a href={event.ticket_url} target="_blank" rel="noreferrer" className="button">Buy tickets</a>}
+          {event.ticket_url && !showpassConfig && <a href={event.ticket_url} target="_blank" rel="noreferrer" className="button">Buy tickets</a>}
         </div>
       </section>
-      {!event.ticket_url && <section className="event-note inner-section"><p className="section-eyebrow dark"><span />Ticket information</p><h2>Tickets are coming soon.</h2><p>Online ticket sales will be announced by GOOM.</p></section>}
+      {videos.length > 0 && <section className="event-media-section inner-section">
+        <div className="event-section-intro"><p className="section-eyebrow"><span />Promotional media</p><h2>Watch the <em>experience.</em></h2></div>
+        <div className={`event-video-grid event-video-count-${Math.min(videos.length, 3)}`}>{videos.map((video, index) => <ResponsiveVideo key={video.id} video={video} title={`${event.title} promotional video ${index + 1}`} />)}</div>
+      </section>}
+      {showpassConfig && <section className="event-ticket-section inner-section">
+        <div className="event-section-intro"><p className="section-eyebrow dark"><span />Official ticketing</p><h2>Get your <em>tickets.</em></h2><p>Choose your tickets securely through Showpass without leaving the event experience.</p></div>
+        <div className="showpass-shell"><ShowpassWidget config={showpassConfig} title={event.title} /></div>
+        {event.ticket_url && <a href={event.ticket_url} target="_blank" rel="noreferrer" className="outline-link">Open ticket page instead</a>}
+      </section>}
     </main>
   );
 }

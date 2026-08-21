@@ -4,10 +4,17 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin/auth";
 import { removeStoredImage, uploadImage } from "@/lib/admin/storage";
+import { normalizeVideoInput } from "@/lib/event-video";
+import { parseShowpassWidgetCode } from "@/lib/showpass";
 import { createClient } from "@/lib/supabase/server";
 import type { EventStatus } from "@/lib/supabase/types";
 
 export type EventActionState = { error: string };
+
+function validExternalUrl(value: string) {
+  if (!value) return true;
+  try { return ["http:", "https:"].includes(new URL(value).protocol); } catch { return false; }
+}
 
 export async function saveEvent(id: string | null, _state: EventActionState, formData: FormData): Promise<EventActionState> {
   await requireAdmin();
@@ -18,6 +25,20 @@ export async function saveEvent(id: string | null, _state: EventActionState, for
   if (!title || !slug) return { error: "Event name and slug are required." };
   const status = String(formData.get("status") || "draft") as EventStatus;
   if (!["draft", "published", "past"].includes(status)) return { error: "Invalid event status." };
+
+  const ticketUrl = String(formData.get("ticket_url") || "").trim();
+  if (!validExternalUrl(ticketUrl)) return { error: "Ticket URL must be a valid HTTP or HTTPS address." };
+  const showpassWidgetCode = String(formData.get("showpass_widget_code") || "").trim();
+  if (showpassWidgetCode && !parseShowpassWidgetCode(showpassWidgetCode)) {
+    return { error: "The Showpass code is invalid. Paste an official Showpass iframe, URL, or eventPurchaseWidget embed." };
+  }
+
+  const videoUrls = formData.getAll("video_url").map((value) => String(value).trim());
+  const videoRatios = formData.getAll("video_aspect_ratio").map(String);
+  const videoEntries = videoUrls.map((url, index) => ({ url, ratio: videoRatios[index] || "auto" })).filter((video) => video.url);
+  if (videoEntries.length > 8) return { error: "A maximum of eight promotional videos is allowed." };
+  const videos = videoEntries.map((video) => normalizeVideoInput(video.url, video.ratio));
+  if (videos.some((video) => !video)) return { error: "One or more video URLs or embeds are invalid. Use HTTPS YouTube, Vimeo, MP4, or iframe sources." };
 
   let imageUrl = String(formData.get("current_image_url") || "") || null;
   const image = formData.get("image");
@@ -38,14 +59,24 @@ export async function saveEvent(id: string | null, _state: EventActionState, for
     address: String(formData.get("address") || "").trim() || null,
     city: String(formData.get("city") || "").trim() || null,
     image_url: imageUrl,
-    ticket_url: String(formData.get("ticket_url") || "").trim() || null,
+    ticket_url: ticketUrl || null,
+    showpass_widget_code: showpassWidgetCode || null,
     status,
     featured,
     updated_at: new Date().toISOString(),
   };
-  const result = id ? await supabase.from("events").update(payload).eq("id", id) : await supabase.from("events").insert(payload);
+  const result = id
+    ? await supabase.from("events").update(payload).eq("id", id).select("id").single()
+    : await supabase.from("events").insert(payload).select("id").single();
   if (result.error) return { error: result.error.message };
-  revalidatePath("/"); revalidatePath("/events"); revalidatePath("/admin"); revalidatePath("/admin/events");
+  const eventId = result.data.id;
+  const { error: deleteVideosError } = await supabase.from("event_videos").delete().eq("event_id", eventId);
+  if (deleteVideosError) return { error: deleteVideosError.message };
+  if (videos.length) {
+    const { error: videoError } = await supabase.from("event_videos").insert(videos.map((video, index) => ({ ...video!, event_id: eventId, sort_order: index })));
+    if (videoError) return { error: videoError.message };
+  }
+  revalidatePath("/"); revalidatePath("/events"); revalidatePath(`/events/${slug}`); revalidatePath("/admin"); revalidatePath("/admin/events");
   redirect("/admin/events?saved=1");
 }
 

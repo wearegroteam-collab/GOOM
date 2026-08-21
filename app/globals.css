@@ -183,6 +183,29 @@ img { object-fit: cover; }
 .event-note h2 { margin-bottom: 20px; }
 .event-note > p:last-child { color: #5b5d62; }
 
+.event-media-section { overflow: hidden; background: #101218; color: white; }
+.event-section-intro { max-width: 900px; margin: 0 auto 58px; text-align: center; }
+.event-section-intro .section-eyebrow { justify-content: center; }
+.event-section-intro h2 { margin: 0; font-size: clamp(46px, 6vw, 82px); letter-spacing: -.06em; line-height: .92; text-transform: uppercase; }
+.event-section-intro h2 em { color: transparent; font-style: normal; -webkit-text-stroke: 1px currentColor; }
+.event-section-intro > p:last-child { max-width: 620px; margin: 24px auto 0; color: #60636a; font-size: 14px; line-height: 1.75; }
+.event-video-grid { width: 100%; max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: clamp(18px, 3vw, 34px); align-items: start; }
+.event-video-grid.event-video-count-1 { display: block; }
+.event-video { width: 100%; margin-inline: auto; overflow: hidden; border: 1px solid rgba(255,255,255,.14); background: #050506; box-shadow: 0 30px 70px rgba(0,0,0,.24); }
+.event-video iframe, .event-video video { width: 100%; height: 100%; display: block; border: 0; background: black; object-fit: contain; }
+.event-video.video-ratio-wide { max-width: 1120px; aspect-ratio: 16 / 9; }
+.event-video.video-ratio-vertical { max-width: 420px; aspect-ratio: 9 / 16; }
+.event-video.video-ratio-portrait { max-width: 520px; aspect-ratio: 4 / 5; }
+.event-video.video-ratio-square { max-width: 680px; aspect-ratio: 1; }
+.event-video.video-ratio-auto { max-width: 960px; }
+.event-video.video-ratio-auto video { height: auto; max-height: 78vh; }
+.event-ticket-section { overflow: hidden; background: var(--paper); color: var(--ink); text-align: center; }
+.showpass-shell { width: 100%; max-width: 1120px; margin: 0 auto; overflow: hidden; border: 1px solid var(--line-light); background: white; text-align: left; }
+.showpass-frame { width: 100%; min-height: 760px; display: block; border: 0; }
+.showpass-mount { width: 100%; min-width: 0; overflow: hidden; }
+.showpass-mount iframe, .showpass-mount > * { max-width: 100% !important; }
+.event-ticket-section .outline-link { margin-top: 30px; }
+
 @media (max-width: 1023px) {
   .desktop-nav { gap: 18px; }
   .header-quote { display: none; }
@@ -253,6 +276,14 @@ img { object-fit: cover; }
   .detail-image:after { background: linear-gradient(0deg, var(--ink), transparent 35%); }
   .detail-copy { padding: 45px 22px 70px; }
   .detail-copy .button { width: 100%; }
+  .event-section-intro { margin-bottom: 38px; text-align: left; }
+  .event-section-intro .section-eyebrow { justify-content: flex-start; }
+  .event-section-intro h2 { font-size: clamp(42px, 13vw, 62px); }
+  .event-section-intro > p:last-child { margin-inline: 0; }
+  .event-video-grid { grid-template-columns: 1fr; gap: 16px; }
+  .event-video.video-ratio-vertical, .event-video.video-ratio-portrait, .event-video.video-ratio-square { max-width: min(100%, 430px); }
+  .showpass-frame { min-height: 720px; }
+  .event-ticket-section .outline-link { width: 100%; justify-content: center; }
 }
 
 @media (max-width: 380px) {
@@ -325,6 +356,20 @@ body:has(.admin-shell) { background: #f4f5f7; color: #16181d; }
 .admin-editor textarea, .admin-record-card textarea { resize: vertical; }
 .admin-editor input[type="file"], .admin-record-card input[type="file"], .admin-upload-panel input[type="file"] { padding: 9px; background: #f8f8f9; }
 .admin-editor label small { color: #969aa3; font-weight: 400; letter-spacing: 0; text-transform: none; }
+.admin-event-section { min-width: 0; margin: 8px 0; padding: 24px; border: 1px solid #dedfe3; border-radius: 7px; background: #fafafa; }
+.admin-event-section > legend { padding: 0 8px; color: #25272c; font-size: 15px; font-weight: 800; letter-spacing: -.01em; text-transform: none; }
+.admin-event-section > label + label { margin-top: 19px; }
+.admin-section-heading { margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.admin-section-heading > p { max-width: 660px; margin: 0; color: #777b84; font-size: 12px; line-height: 1.6; }
+.admin-video-list { display: flex; flex-direction: column; gap: 14px; }
+.admin-video-row { padding: 16px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(220px, .7fr); gap: 20px; align-items: start; border: 1px solid #dfe1e5; border-radius: 6px; background: white; }
+.admin-video-fields { min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 13px; align-items: end; }
+.admin-video-fields > label:first-child { grid-column: 1 / -1; }
+.admin-video-fields .admin-danger-button { justify-self: start; }
+.admin-media-empty { padding: 28px; border: 1px dashed #cfd1d6; border-radius: 6px; color: #858993; text-align: center; font-size: 12px; }
+.admin-video-preview { min-width: 0; }
+.admin-video-preview > span { margin-bottom: 8px; display: block; color: #8a8e97; font-size: 8px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+.event-video-compact { max-width: 280px !important; max-height: 340px; box-shadow: none; }
 .admin-check { align-self: end; min-height: 44px; flex-direction: row !important; align-items: center; gap: 9px !important; }
 .admin-check input { width: 17px !important; min-height: 17px !important; accent-color: #17191d; }
 .admin-form-actions { margin-top: 28px; padding-top: 22px; display: flex; gap: 10px; border-top: 1px solid #e5e6e9; }
@@ -369,6 +414,7 @@ body:has(.admin-shell) { background: #f4f5f7; color: #16181d; }
   .admin-upload-panel { grid-template-columns: 1fr 1fr; }
   .admin-gallery-grid { grid-template-columns: repeat(2, 1fr); }
   .admin-login-page { grid-template-columns: .8fr 1.2fr; }
+  .admin-video-row { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {
@@ -389,6 +435,11 @@ body:has(.admin-shell) { background: #f4f5f7; color: #16181d; }
   .admin-form-actions > * { flex: 1; }
   .admin-form-actions .admin-danger-button { margin-left: 0; flex-basis: 100%; }
   .admin-inline-fields, .admin-upload-panel { grid-template-columns: 1fr; }
+  .admin-event-section { padding: 18px 14px; }
+  .admin-section-heading { align-items: stretch; flex-direction: column; }
+  .admin-video-fields { grid-template-columns: 1fr; }
+  .admin-video-fields > label:first-child { grid-column: auto; }
+  .admin-video-fields .admin-danger-button { width: 100%; }
   .admin-record-heading { align-items: flex-start; flex-direction: column; }
   .admin-record-heading > div:last-child { width: 100%; }
   .admin-record-heading button { flex: 1; }
