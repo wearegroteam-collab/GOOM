@@ -3,18 +3,19 @@ import { ArrowRight, CircleCheck } from "lucide-react";
 import { CTASection } from "@/components/CTASection";
 import { EventCard } from "@/components/EventCard";
 import { GalleryGrid } from "@/components/GalleryGrid";
-import { HeroEvent } from "@/components/HeroEvent";
+import { HeroSlider } from "@/components/HeroSlider";
 import { SectionTitle } from "@/components/SectionTitle";
 import { ServiceCard } from "@/components/ServiceCard";
-import { getActiveServices, getFeaturedEvent, getGalleryItems, getPublishedEvents } from "@/lib/site-data";
+import { heroSlides } from "@/data/heroSlides";
+import { getActiveServices, getGalleryItems, getPublishedEvents } from "@/lib/site-data";
 
 export default async function Home() {
-  const [featuredEvent, events, services, gallery] = await Promise.all([
-    getFeaturedEvent(), getPublishedEvents(), getActiveServices(), getGalleryItems(true),
+  const [events, services, gallery] = await Promise.all([
+    getPublishedEvents(), getActiveServices(), getGalleryItems(true),
   ]);
   return (
     <main>
-      <HeroEvent event={featuredEvent} />
+      <HeroSlider slides={heroSlides} />
       <section className="intro-section content-section">
         <div className="intro-number">GOOM<span>EST. NIAGARA</span></div>
         <div className="intro-copy">
