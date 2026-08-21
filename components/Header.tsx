@@ -23,6 +23,18 @@ export function Header() {
     return () => window.removeEventListener("scroll", updateHeader);
   }, []);
 
+  useEffect(() => {
+    document.body.classList.toggle("mobile-menu-open", open);
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    if (open) window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.classList.remove("mobile-menu-open");
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [open]);
+
   return (
     <header className={`site-header ${scrolled ? "is-scrolled" : ""}`}>
       <Logo />
