@@ -8,10 +8,9 @@ export function Logo() {
         className="brand-image"
         src="/images/goom-logo.png"
         alt="GOOM Event Production"
-        width={1024}
-        height={1024}
-        sizes="(max-width: 767px) 126px, 148px"
-        loading="eager"
+        fill
+        sizes="(max-width: 767px) 116px, 144px"
+        priority
       />
     </Link>
   );

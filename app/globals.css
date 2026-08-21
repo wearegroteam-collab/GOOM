@@ -1186,3 +1186,104 @@ body:has(.admin-shell) { background: #f4f5f7; color: #16181d; }
   .admin-login-brand strong { font-size: 72px; }
   .admin-login-form { padding: 30px 24px; }
 }
+
+/* Definitive public header: keep the brand contained and the mobile menu opaque. */
+.site-header,
+.site-header.is-scrolled {
+  height: 76px;
+  background: #000;
+  border-bottom-color: rgba(255,255,255,.09);
+  box-shadow: 0 10px 34px rgba(0,0,0,.22);
+  backdrop-filter: none;
+}
+
+.brand {
+  position: relative;
+  z-index: 55;
+  width: 144px;
+  height: 60px;
+  flex: 0 0 144px;
+  display: block;
+  overflow: hidden;
+  background: #000;
+}
+
+.brand-image {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: 50% 46%;
+  mix-blend-mode: normal;
+  transform: none;
+}
+
+.site-footer .brand {
+  width: 164px;
+  height: 70px;
+  flex-basis: 164px;
+  background: transparent;
+}
+
+.site-footer .brand-image {
+  width: 100% !important;
+}
+
+@media (max-width: 767px) {
+  .site-header,
+  .site-header.is-scrolled {
+    height: 68px;
+    padding-inline: 18px;
+    background: #000;
+  }
+
+  .brand {
+    width: 116px;
+    height: 50px;
+    flex-basis: 116px;
+  }
+
+  .menu-button {
+    width: 44px;
+    height: 44px;
+    border: 1px solid rgba(255,255,255,.16);
+    border-radius: 12px;
+    background: #0d1017;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  }
+
+  .menu-button[aria-expanded="true"] {
+    border-color: rgba(223,183,104,.85);
+    background: #11141c;
+  }
+
+  .mobile-menu {
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    padding: 92px 20px 24px;
+    background-color: #080a0f !important;
+    background-image:
+      linear-gradient(#000 0 68px, transparent 68px),
+      radial-gradient(circle at 88% 12%, rgba(53,109,255,.2), transparent 34%),
+      radial-gradient(circle at 8% 88%, rgba(109,48,185,.11), transparent 30%) !important;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(100%);
+    visibility: hidden;
+  }
+
+  .mobile-menu.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .site-footer .brand {
+    width: 150px;
+    height: 64px;
+    flex-basis: 150px;
+  }
+}
