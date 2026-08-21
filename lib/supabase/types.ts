@@ -40,6 +40,13 @@ export type GalleryRecord = {
 
 export type SiteSettingRecord = { id: string; key: string; value: string | null };
 
+export type AdminUserRecord = {
+  user_id: string;
+  email: string | null;
+  active: boolean;
+  created_at: string;
+};
+
 type Table<Row> = {
   Row: Row;
   Insert: Partial<Row>;
@@ -54,6 +61,7 @@ export type Database = {
       services: Table<ServiceRecord>;
       gallery: Table<GalleryRecord>;
       site_settings: Table<SiteSettingRecord>;
+      admin_users: Table<AdminUserRecord>;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

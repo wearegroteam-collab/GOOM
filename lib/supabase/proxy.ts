@@ -23,7 +23,21 @@ export async function updateSession(request: NextRequest) {
   });
 
   const { data: { user } } = await supabase.auth.getUser();
+  let isAdmin = false;
+  if (user) {
+    const { data } = await supabase
+      .from("admin_users")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .eq("active", true)
+      .maybeSingle();
+    isAdmin = Boolean(data);
+  }
+
   if (!user && !isLogin) return NextResponse.redirect(new URL("/admin/login", request.url));
-  if (user && isLogin) return NextResponse.redirect(new URL("/admin", request.url));
+  if (user && !isAdmin && !isLogin) {
+    return NextResponse.redirect(new URL("/admin/login?error=not-admin", request.url));
+  }
+  if (user && isAdmin && isLogin) return NextResponse.redirect(new URL("/admin", request.url));
   return response;
 }

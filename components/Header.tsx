@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Logo } from "./Logo";
 
 const links = [
@@ -14,8 +14,6 @@ const links = [
 export function Header() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-
-  useEffect(() => setOpen(false), [pathname]);
 
   return (
     <header className="site-header">
@@ -31,9 +29,9 @@ export function Header() {
       </button>
       <div id="mobile-menu" className={`mobile-menu ${open ? "is-open" : ""}`} aria-hidden={!open}>
         <nav aria-label="Mobile navigation">
-          {links.map(([label, href], index) => <Link key={href} href={href}><span>0{index + 1}</span>{label}</Link>)}
+          {links.map(([label, href], index) => <Link key={href} href={href} onClick={() => setOpen(false)}><span>0{index + 1}</span>{label}</Link>)}
         </nav>
-        <Link className="button" href="/contact">Get a quote</Link>
+        <Link className="button" href="/contact" onClick={() => setOpen(false)}>Get a quote</Link>
         <p>Niagara, Ontario · Canada</p>
       </div>
     </header>

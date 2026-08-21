@@ -39,15 +39,27 @@ The public experience is backed by Supabase when configured and keeps local fall
 The private CMS is available at `/admin`. To activate it:
 
 1. Create a Supabase project.
-2. Run `supabase/migrations/202608200001_goom_cms.sql` in the Supabase SQL Editor. It creates the tables, row-level security policies, image buckets and starter content.
+2. Run `supabase/migrations/202608200001_goom_cms.sql` in the Supabase SQL Editor. It creates the tables, row-level security policies, image buckets and starter content. If the first migration was already installed before administrator validation was added, also run `supabase/migrations/202608200002_admin_authorization.sql`.
 3. Copy `.env.example` to `.env.local` and set:
 
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-key
+   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+   NEXT_PUBLIC_SITE_URL=https://goomevents.ca
    ```
 
+   `NEXT_PUBLIC_SUPABASE_URL` must be the project base URL only. Do not append `/rest/v1`, `/auth/v1` or `/storage/v1`.
+
+   Legacy Supabase projects may use `NEXT_PUBLIC_SUPABASE_ANON_KEY` instead of the publishable key.
+
 4. Create the administrator manually in Supabase Authentication > Users. There is no public registration screen.
-5. Disable open sign-ups in the Supabase Authentication settings and restart the development server.
+5. Open `supabase/authorize-admin.sql`, replace `admin@example.com` with the exact account email, and run it in the SQL Editor. The final query must return one row with `active = true`.
+6. Disable open sign-ups in the Supabase Authentication settings and restart the development server.
 
 The CMS manages events, services, gallery images and site-wide contact/social settings. Uploaded images are stored in Supabase Storage.
+
+## Vercel
+
+Import the project as a Next.js application. In Project Settings > Environment Variables, add the same three values for Production and Preview, then redeploy. No service-role or secret Supabase key is required by this application and none should be exposed with a `NEXT_PUBLIC_` prefix.
+
+After deployment, set the production domain as the Supabase Authentication Site URL. If preview deployments will be used to sign in, add the appropriate Vercel preview pattern to Supabase's allowed Redirect URLs. Password login itself does not use a callback route, but keeping the URL configuration accurate prevents future email or OAuth flows from redirecting to the wrong host.

@@ -11,6 +11,8 @@ export default async function AdminDashboard() {
     const { data } = await supabase.from("events").select("*").order("created_at", { ascending: false });
     events = (data || []) as EventRecord[];
   }
+  // Server-rendered request time is intentional for the live upcoming-event count.
+  // eslint-disable-next-line react-hooks/purity
   const now = Date.now();
   const stats = {
     upcoming: events.filter((event) => event.status === "published" && event.date && new Date(event.date).getTime() >= now).length,
