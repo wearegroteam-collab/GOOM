@@ -1,6 +1,7 @@
 export type EventStatus = "draft" | "published" | "past";
-export type VideoProvider = "youtube" | "vimeo" | "mp4" | "embed";
+export type VideoProvider = "youtube" | "vimeo" | "instagram" | "mp4" | "embed";
 export type VideoAspectRatio = "auto" | "16:9" | "9:16" | "4:5" | "1:1";
+export type HeroMediaType = "image" | "video";
 
 export type EventRecord = {
   id: string;
@@ -13,6 +14,8 @@ export type EventRecord = {
   address: string | null;
   city: string | null;
   image_url: string | null;
+  info_banner_url?: string | null;
+  hero_media_type?: HeroMediaType;
   ticket_url: string | null;
   showpass_widget_code: string | null;
   status: EventStatus;
@@ -29,6 +32,21 @@ export type EventVideoRecord = {
   aspect_ratio: VideoAspectRatio;
   sort_order: number;
   created_at: string;
+};
+
+export type HomeBannerRecord = {
+  id: string;
+  title: string;
+  alt_text: string;
+  desktop_image_url: string;
+  tablet_image_url: string | null;
+  mobile_image_url: string | null;
+  button_label: string | null;
+  button_url: string | null;
+  active: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
 };
 
 export type ServiceRecord = {
@@ -72,6 +90,7 @@ export type Database = {
     Tables: {
       events: Table<EventRecord>;
       event_videos: Table<EventVideoRecord>;
+      home_banners: Table<HomeBannerRecord>;
       services: Table<ServiceRecord>;
       gallery: Table<GalleryRecord>;
       site_settings: Table<SiteSettingRecord>;

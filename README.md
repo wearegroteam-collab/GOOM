@@ -41,6 +41,8 @@ The private CMS is available at `/admin`. To activate it:
 1. Create a Supabase project.
 2. Run `supabase/migrations/202608200001_goom_cms.sql` in the Supabase SQL Editor. It creates the tables, row-level security policies, image buckets and starter content. If the first migration was already installed before administrator validation was added, also run `supabase/migrations/202608200002_admin_authorization.sql`.
    To enable Showpass embeds and promotional videos, then run `supabase/migrations/202608200003_event_media_showpass.sql`.
+   To enable the optional information banner below each event hero, also run `supabase/migrations/202608210001_event_info_banner.sql`.
+   Finally, run `supabase/migrations/202608210002_home_banners_hero_media_instagram.sql` to enable responsive home banners, Instagram embeds and the image/video hero selector.
 3. Copy `.env.example` to `.env.local` and set:
 
    ```env
@@ -57,9 +59,9 @@ The private CMS is available at `/admin`. To activate it:
 5. Open `supabase/authorize-admin.sql`, replace `admin@example.com` with the exact account email, and run it in the SQL Editor. The final query must return one row with `active = true`.
 6. Disable open sign-ups in the Supabase Authentication settings and restart the development server.
 
-The CMS manages events, services, gallery images and site-wide contact/social settings. Uploaded images are stored in Supabase Storage.
+The CMS manages responsive home banners, events, services, gallery images and site-wide contact/social settings. Uploaded images are stored in Supabase Storage.
 
-Event records can also store an official Showpass widget embed. Promotional videos are stored as ordered URL metadata in `event_videos`; remote video files are never copied into the database or converted to base64. This feature does not require additional environment variables.
+Event records can also store an official Showpass widget embed. Promotional videos—including normalized Instagram, YouTube and Vimeo links—are stored as ordered URL metadata in `event_videos`; remote video files are never copied into the database or converted to base64. This feature does not require additional environment variables.
 
 ## Vercel
 

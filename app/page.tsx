@@ -7,15 +7,28 @@ import { HeroSlider } from "@/components/HeroSlider";
 import { SectionTitle } from "@/components/SectionTitle";
 import { ServiceCard } from "@/components/ServiceCard";
 import { heroSlides } from "@/data/heroSlides";
-import { getActiveServices, getGalleryItems, getPublishedEvents } from "@/lib/site-data";
+import { getActiveServices, getGalleryItems, getHomeBanners, getPublishedEvents } from "@/lib/site-data";
 
 export default async function Home() {
-  const [events, services, gallery] = await Promise.all([
-    getPublishedEvents(), getActiveServices(), getGalleryItems(true),
+  const [events, services, gallery, banners] = await Promise.all([
+    getPublishedEvents(), getActiveServices(), getGalleryItems(true), getHomeBanners(),
   ]);
+  const slides = banners.length ? banners.map((banner) => ({
+    id: banner.id,
+    title: banner.title,
+    desktopImage: banner.desktop_image_url,
+    tabletImage: banner.tablet_image_url || banner.desktop_image_url,
+    mobileImage: banner.mobile_image_url || banner.tablet_image_url || banner.desktop_image_url,
+    alt: banner.alt_text,
+    ticketUrl: banner.button_url || undefined,
+    buttonLabel: banner.button_label || undefined,
+    contactUrl: "/contact",
+    active: banner.active,
+    sortOrder: banner.sort_order,
+  })) : heroSlides;
   return (
     <main>
-      <HeroSlider slides={heroSlides} />
+      <HeroSlider slides={slides} />
       <section className="intro-section content-section">
         <div className="intro-number">GOOM<span>EST. NIAGARA</span></div>
         <div className="intro-copy">

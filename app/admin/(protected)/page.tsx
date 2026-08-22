@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, Images, Settings, Sparkles } from "lucide-react";
+import { CalendarDays, Images, PanelsTopLeft, Settings, Sparkles } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { createClient } from "@/lib/supabase/server";
 import type { EventRecord } from "@/lib/supabase/types";
@@ -20,6 +20,7 @@ export default async function AdminDashboard() {
     drafts: events.filter((event) => event.status === "draft").length,
   };
   const areas = [
+    ["Home banners", "Upload responsive artwork for the home carousel", "/admin/home-banners", PanelsTopLeft],
     ["Events", "Create, publish and feature events", "/admin/events", CalendarDays],
     ["Services", "Manage the services shown publicly", "/admin/services", Sparkles],
     ["Gallery", "Upload and curate event imagery", "/admin/gallery", Images],

@@ -129,7 +129,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
         <div className="hero-slider-actions">
           {activeSlide.ticketUrl && (
             <Link className="button slider-ticket-button" href={activeSlide.ticketUrl}>
-              Buy tickets <ArrowUpRight size={18} aria-hidden="true" />
+              {activeSlide.buttonLabel || "Buy tickets"} <ArrowUpRight size={18} aria-hidden="true" />
             </Link>
           )}
           <Link className="slider-contact-button" href={activeSlide.contactUrl || "/contact"}>

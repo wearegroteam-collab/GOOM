@@ -5,7 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { useActionState, useState } from "react";
 import { ResponsiveVideo } from "@/components/ResponsiveVideo";
 import { normalizeVideoInput } from "@/lib/event-video";
-import type { EventRecord, EventVideoRecord, VideoAspectRatio } from "@/lib/supabase/types";
+import type { EventRecord, EventVideoRecord, HeroMediaType, VideoAspectRatio } from "@/lib/supabase/types";
 import { deleteEvent, saveEvent } from "@/app/admin/(protected)/events/actions";
 
 function inputDate(value: string | null | undefined) { return value ? new Date(value).toISOString().slice(0, 16) : ""; }
@@ -15,8 +15,9 @@ type VideoDraft = { key: string; url: string; aspect_ratio: VideoAspectRatio };
 export function EventForm({ event, eventVideos = [] }: { event?: EventRecord; eventVideos?: EventVideoRecord[] }) {
   const action = saveEvent.bind(null, event?.id || null);
   const [state, formAction, pending] = useActionState(action, { error: "" });
-  const deleteAction = event ? deleteEvent.bind(null, event.id, event.image_url) : undefined;
+  const deleteAction = event ? deleteEvent.bind(null, event.id, event.image_url, event.info_banner_url || null) : undefined;
   const [videos, setVideos] = useState<VideoDraft[]>(eventVideos.map((video) => ({ key: video.id, url: video.url, aspect_ratio: video.aspect_ratio })));
+  const [heroMediaType, setHeroMediaType] = useState<HeroMediaType>(event?.hero_media_type || "image");
 
   function updateVideo(key: string, changes: Partial<VideoDraft>) {
     setVideos((items) => items.map((item) => item.key === key ? { ...item, ...changes } : item));
@@ -24,6 +25,7 @@ export function EventForm({ event, eventVideos = [] }: { event?: EventRecord; ev
 
   return <form action={formAction} className="admin-editor" encType="multipart/form-data">
     <input type="hidden" name="current_image_url" value={event?.image_url || ""} />
+    <input type="hidden" name="current_info_banner_url" value={event?.info_banner_url || ""} />
     <div className="admin-form-grid">
       <label>Event Name<input name="title" defaultValue={event?.title} required /></label>
       <label>Subtitle<input name="subtitle" defaultValue={event?.subtitle || ""} /></label>
@@ -34,6 +36,9 @@ export function EventForm({ event, eventVideos = [] }: { event?: EventRecord; ev
       <label>Address<input name="address" defaultValue={event?.address || ""} /></label>
       <label>City<input name="city" defaultValue={event?.city || ""} /></label>
       <label className="full">Event Image<input name="image" type="file" accept="image/*" /><small>{event?.image_url ? "Upload a new image to replace the current one." : "JPG, PNG or WebP. Maximum 6 MB."}</small></label>
+      <label className="full">Hero Media<select name="hero_media_type" value={heroMediaType} onChange={(event) => setHeroMediaType(event.target.value as HeroMediaType)}><option value="image">Use the event image</option><option value="video">Use the first promotional video</option></select><small>{heroMediaType === "video" ? "The first valid video below will appear in the event hero. Browser autoplay normally starts muted; Instagram may require the visitor to press play." : "The event image will appear in the hero. All promotional videos stay in the media section below."}</small></label>
+      <label className="full">Information Banner<input name="info_banner" type="file" accept="image/*" /><small>{event?.info_banner_url ? "Upload a new banner to replace the current one. Recommended format: 1920 × 600 px." : "Optional image displayed below the event introduction. Recommended format: 1920 × 600 px."}</small></label>
+      {event?.info_banner_url && <label className="admin-check full"><input name="remove_info_banner" type="checkbox" />Remove current information banner</label>}
 
       <fieldset className="admin-event-section full">
         <legend>Ticketing</legend>
@@ -43,14 +48,14 @@ export function EventForm({ event, eventVideos = [] }: { event?: EventRecord; ev
 
       <fieldset className="admin-event-section full">
         <legend>Promotional Video</legend>
-        <div className="admin-section-heading"><p>Add YouTube, Vimeo, an HTTPS video embed, or an externally hosted MP4. Up to eight videos can be arranged in the order shown.</p><button type="button" className="admin-secondary-button" disabled={videos.length >= 8} onClick={() => setVideos((items) => [...items, { key: crypto.randomUUID(), url: "", aspect_ratio: "auto" }])}><Plus size={14} />Add video</button></div>
+        <div className="admin-section-heading"><p>Add YouTube, Vimeo, Instagram Reel/Post, HTTPS embeds or externally hosted MP4 files. {heroMediaType === "video" ? "The first video is used in the hero; the rest appear below." : "All videos appear in the promotional section below."}</p><button type="button" className="admin-secondary-button" disabled={videos.length >= 8} onClick={() => setVideos((items) => [...items, { key: crypto.randomUUID(), url: "", aspect_ratio: "auto" }])}><Plus size={14} />Add video</button></div>
         {videos.length === 0 && <div className="admin-media-empty">No promotional videos added.</div>}
         <div className="admin-video-list">
           {videos.map((video, index) => {
             const preview = normalizeVideoInput(video.url, video.aspect_ratio);
             return <div className="admin-video-row" key={video.key}>
               <div className="admin-video-fields">
-                <label>Video {index + 1} URL or iframe<textarea name="video_url" rows={3} value={video.url} onChange={(event) => updateVideo(video.key, { url: event.target.value })} placeholder="https://youtube.com/watch?v=…" /></label>
+                <label>{heroMediaType === "video" && index === 0 ? "Hero video" : `Promotional video ${index + 1}`} URL or iframe<textarea name="video_url" rows={3} value={video.url} onChange={(event) => updateVideo(video.key, { url: event.target.value })} placeholder="YouTube, Vimeo, Instagram or HTTPS MP4 link" /></label>
                 <label>Format<select name="video_aspect_ratio" value={video.aspect_ratio} onChange={(event) => updateVideo(video.key, { aspect_ratio: event.target.value as VideoAspectRatio })}><option value="auto">Auto</option><option value="16:9">16:9 horizontal</option><option value="9:16">9:16 vertical</option><option value="4:5">4:5 portrait</option><option value="1:1">1:1 square</option></select></label>
                 <button type="button" className="admin-danger-button" onClick={() => setVideos((items) => items.filter((item) => item.key !== video.key))}><Trash2 size={14} />Remove</button>
               </div>

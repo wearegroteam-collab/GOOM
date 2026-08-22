@@ -6,6 +6,7 @@ export interface HeroSlide {
   mobileImage: string;
   alt: string;
   ticketUrl?: string;
+  buttonLabel?: string;
   contactUrl?: string;
   active: boolean;
   sortOrder: number;

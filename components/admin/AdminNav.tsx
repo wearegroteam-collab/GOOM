@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { CalendarDays, Images, LayoutDashboard, LogOut, Settings, Sparkles } from "lucide-react";
+import { CalendarDays, Images, LayoutDashboard, LogOut, PanelsTopLeft, Settings, Sparkles } from "lucide-react";
 import { logout } from "@/app/admin/(protected)/actions";
 
 const links = [
   ["Overview", "/admin", LayoutDashboard],
+  ["Home banners", "/admin/home-banners", PanelsTopLeft],
   ["Events", "/admin/events", CalendarDays],
   ["Services", "/admin/services", Sparkles],
   ["Gallery", "/admin/gallery", Images],

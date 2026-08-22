@@ -1,6 +1,6 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import type { EventRecord, EventVideoRecord, GalleryRecord, ServiceRecord } from "@/lib/supabase/types";
+import type { EventRecord, EventVideoRecord, GalleryRecord, HomeBannerRecord, ServiceRecord } from "@/lib/supabase/types";
 
 const now = new Date().toISOString();
 
@@ -124,6 +124,16 @@ export async function getFeaturedEvent() {
     if (error || !data) return fallbackEvents[0];
     return data as EventRecord;
   } catch { return fallbackEvents[0]; }
+}
+
+export async function getHomeBanners(): Promise<HomeBannerRecord[]> {
+  try {
+    const supabase = await createClient();
+    if (!supabase) return [];
+    const { data, error } = await supabase.from("home_banners").select("*").eq("active", true).order("sort_order");
+    if (error) return [];
+    return (data || []) as HomeBannerRecord[];
+  } catch { return []; }
 }
 
 export async function getPublishedEventBySlug(slug: string) {

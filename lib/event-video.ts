@@ -36,6 +36,14 @@ export function normalizeVideoInput(value: string, requestedRatio: string = "aut
     return { url: `https://player.vimeo.com/video/${videoId}`, provider: "vimeo", aspect_ratio: ratio };
   }
 
+  if (host === "instagram.com" || host === "instagr.am") {
+    const parts = url.pathname.split("/").filter(Boolean);
+    const kind = parts[0];
+    const shortcode = parts[1];
+    if (!shortcode || !["p", "reel", "tv"].includes(kind) || !/^[a-zA-Z0-9_-]+$/.test(shortcode)) return null;
+    return { url: `https://www.instagram.com/${kind}/${shortcode}/embed/`, provider: "instagram", aspect_ratio: ratio === "auto" ? "4:5" : ratio };
+  }
+
   if (/\.mp4$/i.test(url.pathname)) return { url: url.toString(), provider: "mp4", aspect_ratio: ratio };
   return { url: url.toString(), provider: "embed", aspect_ratio: ratio };
 }

@@ -20,6 +20,6 @@ export function ResponsiveVideo({ video, title, compact = false }: { video: Pick
     </div>;
   }
 
-  const knownProvider = video.provider === "youtube" || video.provider === "vimeo";
+  const knownProvider = video.provider === "youtube" || video.provider === "vimeo" || video.provider === "instagram";
   return <div className={className}><iframe src={video.url} title={title} loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" sandbox={knownProvider ? "allow-scripts allow-same-origin allow-presentation allow-popups" : "allow-scripts allow-forms allow-presentation allow-popups"} /></div>;
 }
