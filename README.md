@@ -43,6 +43,7 @@ The private CMS is available at `/admin`. To activate it:
    To enable Showpass embeds and promotional videos, then run `supabase/migrations/202608200003_event_media_showpass.sql`.
    To enable the optional information banner below each event hero, also run `supabase/migrations/202608210001_event_info_banner.sql`.
    Finally, run `supabase/migrations/202608210002_home_banners_hero_media_instagram.sql` to enable responsive home banners, Instagram embeds and the image/video hero selector.
+   Run `supabase/migrations/202608210003_storage_upload_hardening.sql` to align all image buckets, MIME types, the 10 MB limit and administrator Storage policies.
 3. Copy `.env.example` to `.env.local` and set:
 
    ```env

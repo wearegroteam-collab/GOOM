@@ -1113,6 +1113,13 @@ body:has(.admin-shell) { background: #f4f5f7; color: #16181d; }
 .admin-form-actions { margin-top: 28px; padding-top: 22px; display: flex; gap: 10px; border-top: 1px solid #e5e6e9; }
 .admin-form-actions .admin-danger-button { margin-left: auto; }
 .admin-form-error { padding: 12px 14px; border: 1px solid #ebc5c5; border-radius: 4px; background: #fff5f5; color: #a32929; font-size: 11px; }
+.admin-form-success { padding: 12px 14px; border: 1px solid #b7dfc1; border-radius: 4px; background: #f0fff3; color: #236e38; font-size: 11px; }
+.admin-upload-panel > .admin-form-error, .admin-upload-panel > .admin-form-success { grid-column: 1 / -1; margin: 0; }
+.admin-image-upload { display: flex; flex-direction: column; gap: 8px; }
+.admin-upload-status { color: #76591f !important; }
+.admin-upload-error { color: #a32929 !important; }
+.admin-upload-preview { position: relative; width: min(240px, 100%); aspect-ratio: 16 / 9; overflow: hidden; border: 1px solid #dfe1e5; border-radius: 5px; background: #eceef1; }
+.admin-upload-preview img { object-fit: cover; }
 .admin-content-stack { display: flex; flex-direction: column; gap: 16px; }
 .admin-record-heading { margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .admin-record-heading span { color: #9a7a40; font-size: 8px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }

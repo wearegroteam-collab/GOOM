@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Plus, Trash2 } from "lucide-react";
 import { useActionState, useState } from "react";
 import { ResponsiveVideo } from "@/components/ResponsiveVideo";
+import { AdminImageInput } from "@/components/admin/AdminImageInput";
 import { normalizeVideoInput } from "@/lib/event-video";
 import type { EventRecord, EventVideoRecord, HeroMediaType, VideoAspectRatio } from "@/lib/supabase/types";
 import { deleteEvent, saveEvent } from "@/app/admin/(protected)/events/actions";
@@ -35,9 +36,9 @@ export function EventForm({ event, eventVideos = [] }: { event?: EventRecord; ev
       <label>Venue<input name="venue" defaultValue={event?.venue || ""} /></label>
       <label>Address<input name="address" defaultValue={event?.address || ""} /></label>
       <label>City<input name="city" defaultValue={event?.city || ""} /></label>
-      <label className="full">Event Image<input name="image" type="file" accept="image/*" /><small>{event?.image_url ? "Upload a new image to replace the current one." : "JPG, PNG or WebP. Maximum 6 MB."}</small></label>
+      <label className="full" htmlFor="event-main-image">Event Image<AdminImageInput id="event-main-image" name="uploaded_image_url" bucket="events" /><small>{event?.image_url ? "Upload a JPG, PNG, WebP or AVIF image to replace the current one. Maximum 10 MB." : "JPG, PNG, WebP or AVIF. Maximum 10 MB."}</small></label>
       <label className="full">Hero Media<select name="hero_media_type" value={heroMediaType} onChange={(event) => setHeroMediaType(event.target.value as HeroMediaType)}><option value="image">Use the event image</option><option value="video">Use the first promotional video</option></select><small>{heroMediaType === "video" ? "The first valid video below will appear in the event hero. Browser autoplay normally starts muted; Instagram may require the visitor to press play." : "The event image will appear in the hero. All promotional videos stay in the media section below."}</small></label>
-      <label className="full">Information Banner<input name="info_banner" type="file" accept="image/*" /><small>{event?.info_banner_url ? "Upload a new banner to replace the current one. Recommended format: 1920 × 600 px." : "Optional image displayed below the event introduction. Recommended format: 1920 × 600 px."}</small></label>
+      <label className="full" htmlFor="event-info-banner">Information Banner<AdminImageInput id="event-info-banner" name="uploaded_info_banner_url" bucket="events" /><small>{event?.info_banner_url ? "Upload a new banner to replace the current one. Recommended format: 1920 × 600 px; maximum 10 MB." : "Optional image displayed below the event introduction. Recommended format: 1920 × 600 px; maximum 10 MB."}</small></label>
       {event?.info_banner_url && <label className="admin-check full"><input name="remove_info_banner" type="checkbox" />Remove current information banner</label>}
 
       <fieldset className="admin-event-section full">

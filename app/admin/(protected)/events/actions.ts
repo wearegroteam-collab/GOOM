@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin/auth";
-import { removeStoredImage, uploadImage } from "@/lib/admin/storage";
+import { isStoredImageUrl, removeStoredImage } from "@/lib/admin/storage";
 import { normalizeVideoInput } from "@/lib/event-video";
 import { parseShowpassWidgetCode } from "@/lib/showpass";
 import { createClient } from "@/lib/supabase/server";
@@ -43,15 +43,16 @@ export async function saveEvent(id: string | null, _state: EventActionState, for
   if (!["image", "video"].includes(heroMediaType)) return { error: "Invalid hero media option." };
   if (heroMediaType === "video" && !videos.length) return { error: "Add at least one valid promotional video before selecting video for the event hero." };
 
-  let imageUrl = String(formData.get("current_image_url") || "") || null;
+  const previousImageUrl = String(formData.get("current_image_url") || "") || null;
+  let imageUrl = previousImageUrl;
   const previousBannerUrl = String(formData.get("current_info_banner_url") || "") || null;
   let infoBannerUrl = formData.get("remove_info_banner") === "on" ? null : previousBannerUrl;
-  const image = formData.get("image");
-  const infoBanner = formData.get("info_banner");
-  try {
-    if (image instanceof File && image.size) imageUrl = await uploadImage(supabase, "events", image);
-    if (infoBanner instanceof File && infoBanner.size) infoBannerUrl = await uploadImage(supabase, "events", infoBanner);
-  } catch (error) { return { error: error instanceof Error ? error.message : "Image upload failed." }; }
+  const uploadedImageUrl = String(formData.get("uploaded_image_url") || "");
+  const uploadedInfoBannerUrl = String(formData.get("uploaded_info_banner_url") || "");
+  if (uploadedImageUrl && !isStoredImageUrl(uploadedImageUrl, "events")) return { error: "Uploaded event image URL is invalid." };
+  if (uploadedInfoBannerUrl && !isStoredImageUrl(uploadedInfoBannerUrl, "events")) return { error: "Uploaded information banner URL is invalid." };
+  if (uploadedImageUrl) imageUrl = uploadedImageUrl;
+  if (uploadedInfoBannerUrl) infoBannerUrl = uploadedInfoBannerUrl;
 
   const featured = formData.get("featured") === "on";
   if (featured) await supabase.from("events").update({ featured: false }).eq("featured", true);
@@ -77,7 +78,15 @@ export async function saveEvent(id: string | null, _state: EventActionState, for
   const result = id
     ? await supabase.from("events").update(payload).eq("id", id).select("id").single()
     : await supabase.from("events").insert(payload).select("id").single();
-  if (result.error) return { error: result.error.message };
+  if (result.error) {
+    if (process.env.NODE_ENV !== "production") console.error("[GOOM event save]", result.error);
+    await Promise.all([
+      uploadedImageUrl ? removeStoredImage(supabase, "events", uploadedImageUrl) : Promise.resolve(),
+      uploadedInfoBannerUrl ? removeStoredImage(supabase, "events", uploadedInfoBannerUrl) : Promise.resolve(),
+    ]);
+    return { error: "Unable to save the event. Please try again." };
+  }
+  if (previousImageUrl && previousImageUrl !== imageUrl) await removeStoredImage(supabase, "events", previousImageUrl);
   if (previousBannerUrl && previousBannerUrl !== infoBannerUrl) await removeStoredImage(supabase, "events", previousBannerUrl);
   const eventId = result.data.id;
   const { error: deleteVideosError } = await supabase.from("event_videos").delete().eq("event_id", eventId);

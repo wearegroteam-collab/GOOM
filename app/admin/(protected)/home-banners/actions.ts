@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/admin/auth";
-import { removeStoredImage, uploadImage } from "@/lib/admin/storage";
+import { imageUploadError, isStoredImageUrl, removeStoredImage, type ImageFormState } from "@/lib/admin/storage";
 import { createClient } from "@/lib/supabase/server";
 import type { HomeBannerRecord } from "@/lib/supabase/types";
 
@@ -22,27 +22,24 @@ function refreshBanners() {
   revalidatePath("/admin/home-banners");
 }
 
-export async function addHomeBanner(formData: FormData) {
+export async function addHomeBanner(_state: ImageFormState, formData: FormData): Promise<ImageFormState> {
   await requireAdmin();
   const supabase = await createClient();
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase is not configured." };
   const title = text(formData, "title");
   const altText = text(formData, "alt_text") || title;
   const buttonUrl = text(formData, "button_url");
-  const desktop = formData.get("desktop_image");
-  const tablet = formData.get("tablet_image");
-  const mobile = formData.get("mobile_image");
-  if (!title || !(desktop instanceof File) || !desktop.size || !validDestination(buttonUrl)) return;
+  const desktopUrl = text(formData, "uploaded_desktop_image_url");
+  const tabletUrl = text(formData, "uploaded_tablet_image_url") || null;
+  const mobileUrl = text(formData, "uploaded_mobile_image_url") || null;
+  if (!title) return { success: false, error: "Banner title is required." };
+  if (!isStoredImageUrl(desktopUrl, "home-banners")) return { success: false, error: "Desktop image is required." };
+  if (tabletUrl && !isStoredImageUrl(tabletUrl, "home-banners")) return { success: false, error: "Uploaded tablet image URL is invalid." };
+  if (mobileUrl && !isStoredImageUrl(mobileUrl, "home-banners")) return { success: false, error: "Uploaded mobile image URL is invalid." };
+  if (!validDestination(buttonUrl)) return { success: false, error: "Button destination must be a relative path or a valid HTTP/HTTPS URL." };
 
-  const uploaded: string[] = [];
+  const uploaded = [desktopUrl, tabletUrl, mobileUrl].filter((url): url is string => Boolean(url));
   try {
-    const desktopUrl = await uploadImage(supabase, "home-banners", desktop);
-    if (!desktopUrl) return;
-    uploaded.push(desktopUrl);
-    const tabletUrl = tablet instanceof File && tablet.size ? await uploadImage(supabase, "home-banners", tablet) : null;
-    if (tabletUrl) uploaded.push(tabletUrl);
-    const mobileUrl = mobile instanceof File && mobile.size ? await uploadImage(supabase, "home-banners", mobile) : null;
-    if (mobileUrl) uploaded.push(mobileUrl);
     const { error } = await supabase.from("home_banners").insert({
       title,
       alt_text: altText,
@@ -55,41 +52,46 @@ export async function addHomeBanner(formData: FormData) {
       sort_order: Number(formData.get("sort_order") || 0),
     });
     if (error) throw error;
-  } catch {
+  } catch (error) {
     await Promise.all(uploaded.map((url) => removeStoredImage(supabase, "home-banners", url)));
-    return;
+    return { success: false, error: imageUploadError(error, "home banners: create") };
   }
   refreshBanners();
+  return { success: true, error: "", url: uploaded[0] };
 }
 
-export async function updateHomeBanner(id: string, formData: FormData) {
+export async function updateHomeBanner(id: string, _state: ImageFormState, formData: FormData): Promise<ImageFormState> {
   await requireAdmin();
   const supabase = await createClient();
-  if (!supabase) return;
+  if (!supabase) return { success: false, error: "Supabase is not configured." };
   const { data } = await supabase.from("home_banners").select("*").eq("id", id).maybeSingle();
-  if (!data) return;
+  if (!data) return { success: false, error: "Banner could not be found." };
   const current = data as HomeBannerRecord;
   const buttonUrl = text(formData, "button_url");
-  if (!text(formData, "title") || !validDestination(buttonUrl)) return;
+  if (!text(formData, "title")) return { success: false, error: "Banner title is required." };
+  if (!validDestination(buttonUrl)) return { success: false, error: "Button destination must be a relative path or a valid HTTP/HTTPS URL." };
 
   const replacements: Array<{ old: string | null; next: string | null }> = [];
   let desktopUrl = current.desktop_image_url;
   let tabletUrl = formData.get("remove_tablet_image") === "on" ? null : current.tablet_image_url;
   let mobileUrl = formData.get("remove_mobile_image") === "on" ? null : current.mobile_image_url;
+  const uploadedDesktopUrl = text(formData, "uploaded_desktop_image_url");
+  const uploadedTabletUrl = text(formData, "uploaded_tablet_image_url");
+  const uploadedMobileUrl = text(formData, "uploaded_mobile_image_url");
+  for (const url of [uploadedDesktopUrl, uploadedTabletUrl, uploadedMobileUrl]) {
+    if (url && !isStoredImageUrl(url, "home-banners")) return { success: false, error: "One of the uploaded banner image URLs is invalid." };
+  }
   try {
-    const desktop = formData.get("desktop_image");
-    const tablet = formData.get("tablet_image");
-    const mobile = formData.get("mobile_image");
-    if (desktop instanceof File && desktop.size) {
-      desktopUrl = await uploadImage(supabase, "home-banners", desktop) || desktopUrl;
+    if (uploadedDesktopUrl) {
+      desktopUrl = uploadedDesktopUrl;
       replacements.push({ old: current.desktop_image_url, next: desktopUrl });
     }
-    if (tablet instanceof File && tablet.size) {
-      tabletUrl = await uploadImage(supabase, "home-banners", tablet);
+    if (uploadedTabletUrl) {
+      tabletUrl = uploadedTabletUrl;
       replacements.push({ old: current.tablet_image_url, next: tabletUrl });
     } else if (!tabletUrl && current.tablet_image_url) replacements.push({ old: current.tablet_image_url, next: null });
-    if (mobile instanceof File && mobile.size) {
-      mobileUrl = await uploadImage(supabase, "home-banners", mobile);
+    if (uploadedMobileUrl) {
+      mobileUrl = uploadedMobileUrl;
       replacements.push({ old: current.mobile_image_url, next: mobileUrl });
     } else if (!mobileUrl && current.mobile_image_url) replacements.push({ old: current.mobile_image_url, next: null });
 
@@ -106,12 +108,13 @@ export async function updateHomeBanner(id: string, formData: FormData) {
       updated_at: new Date().toISOString(),
     }).eq("id", id);
     if (error) throw error;
-  } catch {
+  } catch (error) {
     await Promise.all(replacements.map(({ old, next }) => next && next !== old ? removeStoredImage(supabase, "home-banners", next) : Promise.resolve()));
-    return;
+    return { success: false, error: imageUploadError(error, "home banners: update") };
   }
   await Promise.all(replacements.map(({ old, next }) => old && old !== next ? removeStoredImage(supabase, "home-banners", old) : Promise.resolve()));
   refreshBanners();
+  return { success: true, error: "", url: desktopUrl };
 }
 
 export async function deleteHomeBanner(id: string) {
