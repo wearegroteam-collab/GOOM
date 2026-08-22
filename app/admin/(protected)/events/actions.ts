@@ -69,6 +69,7 @@ export async function saveEvent(id: string | null, _state: EventActionState, for
     image_url: imageUrl,
     info_banner_url: infoBannerUrl,
     hero_media_type: heroMediaType,
+    hero_media_explicit: true,
     ticket_url: ticketUrl || null,
     showpass_widget_code: showpassWidgetCode || null,
     status,

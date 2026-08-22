@@ -44,6 +44,7 @@ The private CMS is available at `/admin`. To activate it:
    To enable the optional information banner below each event hero, also run `supabase/migrations/202608210001_event_info_banner.sql`.
    Finally, run `supabase/migrations/202608210002_home_banners_hero_media_instagram.sql` to enable responsive home banners, Instagram embeds and the image/video hero selector.
    Run `supabase/migrations/202608210003_storage_upload_hardening.sql` to align all image buckets, MIME types, the 10 MB limit and administrator Storage policies.
+   Run `supabase/migrations/202608220001_event_hero_preference.sql` so existing events with videos use their first video in the hero while preserving future image/video choices made in the admin.
 3. Copy `.env.example` to `.env.local` and set:
 
    ```env

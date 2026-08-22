@@ -33,7 +33,10 @@ export default async function EventDetailPage({ params }: Props) {
   const event = await getPublishedEventBySlug(slug);
   if (!event) notFound();
   const videos = await getEventVideos(event.id);
-  const useVideoHero = event.hero_media_type === "video" && videos.length > 0;
+  // Events created before the hero selector existed automatically promote
+  // their first video. Once an administrator saves an explicit choice, that
+  // image/video preference is respected.
+  const useVideoHero = videos.length > 0 && (event.hero_media_type === "video" || event.hero_media_explicit !== true);
   const heroVideo = useVideoHero ? videos[0] : undefined;
   const secondaryVideos = useVideoHero ? videos.slice(1) : videos;
   const showpassConfig = parseShowpassWidgetCode(event.showpass_widget_code);

@@ -16,6 +16,7 @@ export type EventRecord = {
   image_url: string | null;
   info_banner_url?: string | null;
   hero_media_type?: HeroMediaType;
+  hero_media_explicit?: boolean;
   ticket_url: string | null;
   showpass_widget_code: string | null;
   status: EventStatus;
