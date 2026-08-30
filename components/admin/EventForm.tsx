@@ -7,6 +7,7 @@ import { ResponsiveVideo } from "@/components/ResponsiveVideo";
 import { AdminImageInput } from "@/components/admin/AdminImageInput";
 import { normalizeVideoInput } from "@/lib/event-video";
 import type { EventRecord, EventVideoRecord, HeroMediaType, VideoAspectRatio } from "@/lib/supabase/types";
+import { formatServiceFeeInput } from "@/lib/ticketing/service-fee";
 import { deleteEvent, saveEvent } from "@/app/admin/(protected)/events/actions";
 
 function inputDate(value: string | null | undefined) { return value ? new Date(value).toISOString().slice(0, 16) : ""; }
@@ -19,6 +20,9 @@ export function EventForm({ event, eventVideos = [] }: { event?: EventRecord; ev
   const deleteAction = event ? deleteEvent.bind(null, event.id, event.image_url, event.info_banner_url || null) : undefined;
   const [videos, setVideos] = useState<VideoDraft[]>(eventVideos.map((video) => ({ key: video.id, url: video.url, aspect_ratio: video.aspect_ratio })));
   const [heroMediaType, setHeroMediaType] = useState<HeroMediaType>(event?.hero_media_type || "image");
+  const [useGlobalServiceFee, setUseGlobalServiceFee] = useState(event?.use_global_service_fee !== false);
+  const [eventFeeEnabled, setEventFeeEnabled] = useState(event?.service_fee_enabled === true);
+  const eventFee = { type: event?.service_fee_type || "fixed", value: event?.service_fee_value || 0 };
 
   function updateVideo(key: string, changes: Partial<VideoDraft>) {
     setVideos((items) => items.map((item) => item.key === key ? { ...item, ...changes } : item));
@@ -45,6 +49,8 @@ export function EventForm({ event, eventVideos = [] }: { event?: EventRecord; ev
         <legend>Ticketing</legend>
         <label>Ticket URL<input name="ticket_url" type="url" defaultValue={event?.ticket_url || ""} placeholder="https://…" /><small>Optional external purchase link and widget fallback.</small></label>
         <label>Showpass Widget Code<textarea name="showpass_widget_code" rows={9} defaultValue={event?.showpass_widget_code || ""} placeholder={'<script>showpass.tickets.eventPurchaseWidget("event-slug", {}, "container-id");</script>'} /><small>Paste the official Showpass widget/embed code. Only official Showpass resources are accepted.</small></label>
+        <label className="admin-check"><input name="use_global_service_fee" type="checkbox" checked={useGlobalServiceFee} onChange={(input) => setUseGlobalServiceFee(input.target.checked)} />Use global service fee</label>
+        {!useGlobalServiceFee && <div className="admin-form-grid full"><label className="admin-check full"><input name="service_fee_enabled" type="checkbox" checked={eventFeeEnabled} onChange={(input) => setEventFeeEnabled(input.target.checked)} />Enable service fee for this event</label><label>Fee type<select name="service_fee_type" defaultValue={eventFee.type}><option value="fixed">Fixed amount</option><option value="percentage">Percentage</option></select></label><label>Fee amount<input name="service_fee_amount" inputMode="decimal" defaultValue={formatServiceFeeInput(eventFee)} required /><small>Fixed amount in CAD, or percentage with up to two decimals.</small></label></div>}
       </fieldset>
 
       <fieldset className="admin-event-section full">

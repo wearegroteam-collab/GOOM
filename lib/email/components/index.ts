@@ -42,6 +42,6 @@ export function TicketCard(ticket: TicketEmailItem, invitation = false) {
 }
 
 export function OrderSummary(amounts: OrderEmailAmounts) {
-  const rows = [["Subtotal", formatEmailMoney(amounts.subtotalCents, amounts.currency)], ["Fees", formatEmailMoney(amounts.feesCents, amounts.currency)], ["Total", formatEmailMoney(amounts.totalCents, amounts.currency)], ["Payment", humanizePaymentProvider(amounts.paymentProvider)]];
+  const rows = [["Subtotal", formatEmailMoney(amounts.subtotalCents, amounts.currency)], ["Service fee", formatEmailMoney(amounts.feesCents, amounts.currency)], ["Total", formatEmailMoney(amounts.totalCents, amounts.currency)], ["Payment", humanizePaymentProvider(amounts.paymentProvider)]];
   return `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px">${rows.map(([label, value], index) => `<tr><td style="padding:7px 0;color:#72757d;${index === 2 ? "border-top:1px solid #dedad0;font-weight:700" : ""}">${escapeHtml(label)}</td><td align="right" style="padding:7px 0;color:#111318;${index === 2 ? "border-top:1px solid #dedad0;font-weight:700" : ""}">${escapeHtml(value)}</td></tr>`).join("")}</table>`;
 }

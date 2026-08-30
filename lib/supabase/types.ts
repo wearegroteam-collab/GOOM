@@ -2,6 +2,7 @@ export type EventStatus = "draft" | "published" | "past";
 export type VideoProvider = "youtube" | "vimeo" | "instagram" | "mp4" | "embed";
 export type VideoAspectRatio = "auto" | "16:9" | "9:16" | "4:5" | "1:1";
 export type HeroMediaType = "image" | "video";
+export type ServiceFeeType = "fixed" | "percentage";
 export type PublicAvailabilityStatus = "automatic" | "available" | "selling_fast" | "last_tickets" | "sold_out" | "hidden";
 
 export type EventRecord = {
@@ -24,6 +25,10 @@ export type EventRecord = {
   featured: boolean;
   capacity?: number | null;
   sales_enabled?: boolean;
+  use_global_service_fee?: boolean;
+  service_fee_enabled?: boolean;
+  service_fee_type?: ServiceFeeType;
+  service_fee_value?: number;
   created_at: string;
   updated_at: string;
 };

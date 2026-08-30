@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/server";
 import { TicketSelector } from "@/components/ticketing/TicketSelector";
 import type { TicketTypeRecord } from "@/lib/supabase/types";
 import { publicAvailabilityStatus } from "@/lib/ticketing/core";
+import { effectiveServiceFee, serviceFeeFromSettings } from "@/lib/ticketing/service-fee";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -38,10 +39,15 @@ export default async function EventDetailPage({ params }: Props) {
   if (!event) notFound();
   const videos = await getEventVideos(event.id);
   const supabase = await createClient();
-  const { data: ticketData } = event.sales_enabled && supabase
-    ? await supabase.from("ticket_types").select("*").eq("event_id", event.id).eq("active", true).order("sort_order", { ascending: true })
-    : { data: [] };
+  const [{ data: ticketData }, { data: feeSettingsData }] = event.sales_enabled && supabase
+    ? await Promise.all([
+      supabase.from("ticket_types").select("*").eq("event_id", event.id).eq("active", true).order("sort_order", { ascending: true }),
+      supabase.from("site_settings").select("key,value").in("key", ["service_fee_enabled", "service_fee_type", "service_fee_value"]),
+    ])
+    : [{ data: [] }, { data: [] }];
   const ticketTypes = ((ticketData || []) as TicketTypeRecord[]).filter((ticket) => publicAvailabilityStatus(ticket) !== "hidden");
+  const globalFee = serviceFeeFromSettings(Object.fromEntries((feeSettingsData || []).map((setting) => [setting.key, setting.value])));
+  const serviceFee = effectiveServiceFee(event, globalFee);
   // Events created before the hero selector existed automatically promote
   // their first video. Once an administrator saves an explicit choice, that
   // image/video preference is respected.
@@ -66,7 +72,7 @@ export default async function EventDetailPage({ params }: Props) {
           {event.ticket_url && !showpassConfig && <a href={event.ticket_url} target="_blank" rel="noreferrer" className="button">Buy tickets</a>}
         </div>
       </section>
-      {event.sales_enabled && ticketTypes.length > 0 && <section className="event-ticket-section goom-ticketing-section inner-section"><TicketSelector eventId={event.id} ticketTypes={ticketTypes} nowIso={new Date().toISOString()} /></section>}
+      {event.sales_enabled && ticketTypes.length > 0 && <section className="event-ticket-section goom-ticketing-section inner-section"><TicketSelector eventId={event.id} ticketTypes={ticketTypes} nowIso={new Date().toISOString()} serviceFee={serviceFee} /></section>}
       {event.info_banner_url && <section className="event-info-banner-section" aria-label={`${event.title} additional information`}>
         <div className="event-info-banner"><Image src={event.info_banner_url} alt={`${event.title} event information`} fill sizes="(max-width: 767px) 100vw, 1240px" /></div>
       </section>}

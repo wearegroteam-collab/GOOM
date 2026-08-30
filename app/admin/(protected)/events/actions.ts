@@ -8,6 +8,7 @@ import { normalizeVideoInput } from "@/lib/event-video";
 import { parseShowpassWidgetCode } from "@/lib/showpass";
 import { createClient } from "@/lib/supabase/server";
 import type { EventStatus, HeroMediaType } from "@/lib/supabase/types";
+import { parseServiceFeeValue, type ServiceFeeType } from "@/lib/ticketing/service-fee";
 
 export type EventActionState = { error: string };
 
@@ -32,6 +33,12 @@ export async function saveEvent(id: string | null, _state: EventActionState, for
   if (showpassWidgetCode && !parseShowpassWidgetCode(showpassWidgetCode)) {
     return { error: "The Showpass code is invalid. Paste an official Showpass iframe, URL, or eventPurchaseWidget embed." };
   }
+  const useGlobalServiceFee = formData.get("use_global_service_fee") === "on";
+  const serviceFeeEnabled = !useGlobalServiceFee && formData.get("service_fee_enabled") === "on";
+  const serviceFeeType = String(formData.get("service_fee_type") || "fixed") as ServiceFeeType;
+  if (!(["fixed", "percentage"] as string[]).includes(serviceFeeType)) return { error: "Invalid service fee type." };
+  const serviceFeeValue = useGlobalServiceFee ? 0 : parseServiceFeeValue(serviceFeeType, String(formData.get("service_fee_amount") || "0"));
+  if (serviceFeeValue === null) return { error: "Enter a valid service fee amount. Percentages cannot exceed 100%." };
 
   const videoUrls = formData.getAll("video_url").map((value) => String(value).trim());
   const videoRatios = formData.getAll("video_aspect_ratio").map(String);
@@ -72,6 +79,10 @@ export async function saveEvent(id: string | null, _state: EventActionState, for
     hero_media_explicit: true,
     ticket_url: ticketUrl || null,
     showpass_widget_code: showpassWidgetCode || null,
+    use_global_service_fee: useGlobalServiceFee,
+    service_fee_enabled: serviceFeeEnabled,
+    service_fee_type: serviceFeeType,
+    service_fee_value: serviceFeeValue,
     status,
     featured,
     updated_at: new Date().toISOString(),

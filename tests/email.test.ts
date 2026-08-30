@@ -14,13 +14,15 @@ const tickets = [
 ];
 
 test("ticket email renders a human date and every ticket", () => {
-  const rendered = renderTicketsReadyEmail({ branding, customerName: "Alex Morgan", orderNumber: "GOOM-ORD-000004", event, tickets, orderUrl: "https://goom.example/checkout/order", amounts: { subtotalCents: 8000, feesCents: 0, totalCents: 8000, currency: "CAD", paymentProvider: "square" } });
+  const rendered = renderTicketsReadyEmail({ branding, customerName: "Alex Morgan", orderNumber: "GOOM-ORD-000004", event, tickets, orderUrl: "https://goom.example/checkout/order", amounts: { subtotalCents: 8000, feesCents: 300, totalCents: 8300, currency: "CAD", paymentProvider: "square" } });
   assert.equal(rendered.subject, "Your tickets for Michel Torres — GOOM-ORD-000004");
   assert.match(rendered.html, /Friday, October 30, 2026/);
   assert.doesNotMatch(rendered.html, /2026-10-30T20:00/);
   assert.match(rendered.html, /GOOM-MICH-000001/);
   assert.match(rendered.html, /GOOM-MICH-000002/);
   assert.equal((rendered.html.match(/VIEW TICKET &amp; QR/g) || []).length, 2);
+  assert.match(rendered.html, /Service fee/);
+  assert.match(rendered.html, /\$83\.00/);
 });
 
 test("event time uses the configured Niagara timezone", () => {
