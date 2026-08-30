@@ -1452,3 +1452,26 @@ body:has(.admin-shell) { background: #f4f5f7; color: #16181d; }
     grid-row: auto;
   }
 }
+
+/* Keep the scanner preview mounted so the same live stream is visible and decoded. */
+.scanner-viewport video {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.scanner-viewport video.is-active {
+  opacity: 1;
+}
+
+.scanner-viewport > span {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.scanner-viewport > div {
+  z-index: 1;
+  max-width: 34rem;
+  padding: 24px;
+  text-align: center;
+}
