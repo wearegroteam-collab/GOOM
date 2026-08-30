@@ -1475,3 +1475,20 @@ body:has(.admin-shell) { background: #f4f5f7; color: #16181d; }
   padding: 24px;
   text-align: center;
 }
+
+.email-delivery-card { margin-bottom: 18px; }
+.email-delivery-row { padding: 18px 0; border-top: 1px solid #e6e7ea; }
+.email-delivery-row:first-of-type { border-top: 0; }
+.email-delivery-row > div:first-child { display: flex; align-items: center; gap: 12px; }
+.email-delivery-row dl { margin: 14px 0; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.email-delivery-row dl div { display: grid; gap: 4px; }
+.email-delivery-row dt { color: #888c95; font-size: 10px; text-transform: uppercase; }
+.email-delivery-row dd { margin: 0; overflow-wrap: anywhere; font-size: 12px; }
+.email-delivery-row > p { color: #9c3030; font-size: 12px; }
+
+@media (max-width: 600px) {
+  .email-delivery-row dl { grid-template-columns: 1fr; }
+}
+
+.email-preview-list { display: grid; gap: 20px; }
+.email-preview-list iframe { width: 100%; min-height: 820px; border: 1px solid #dfe1e5; border-radius: 8px; background: #eceae5; }

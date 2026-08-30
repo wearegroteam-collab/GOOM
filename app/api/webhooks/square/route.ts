@@ -1,6 +1,7 @@
 import { WebhooksHelper } from "square";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendOrderTicketsOnce } from "@/lib/email/send-order-tickets";
+import { sendRefundConfirmationOnce } from "@/lib/email/send-refund-confirmation";
 
 type SquareWebhook = { event_id?: string; type?: string; data?: { object?: { payment?: { id?: string; status?: string; reference_id?: string; order_id?: string; amount_money?: { amount?: number | string; currency?: string } }; refund?: { id?: string; status?: string; payment_id?: string; amount_money?: { amount?: number | string; currency?: string } } } } };
 
@@ -38,7 +39,9 @@ export async function POST(request: Request) {
     if ((payload.type === "refund.created" || payload.type === "refund.updated") && refund?.id) {
       const { data: refundRow } = await admin.from("refunds").select("*").eq("provider_refund_id", refund.id).maybeSingle();
       if (refundRow && refundRow.status !== "completed" && refund.status === "COMPLETED") {
-        await admin.rpc("finalize_ticket_refund", { p_provider_refund_id: refund.id });
+        const { error } = await admin.rpc("finalize_ticket_refund", { p_provider_refund_id: refund.id });
+        if (error) throw error;
+        await sendRefundConfirmationOnce(refundRow.id);
       } else if (refundRow && (refund.status === "FAILED" || refund.status === "REJECTED")) await admin.from("refunds").update({ status: "failed" }).eq("id", refundRow.id);
     }
     await admin.from("payment_webhook_events").update({ processed_at: new Date().toISOString(), processing_error: null }).eq("provider", "square").eq("provider_event_id", payload.event_id);

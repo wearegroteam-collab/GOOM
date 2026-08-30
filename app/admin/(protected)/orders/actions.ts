@@ -8,7 +8,8 @@ import { getSquareAccess } from "@/lib/payments/connection";
 import { SquareProvider } from "@/lib/payments/square-provider";
 import { MockPaymentProvider } from "@/lib/payments/mock-provider";
 import { buildRefundIdempotencyKey } from "@/lib/ticketing/core";
-import { sendOrderTicketsOnce } from "@/lib/email/send-order-tickets";
+import { resendOrderTickets, sendOrderTicketsOnce } from "@/lib/email/send-order-tickets";
+import { resendRefundConfirmation, sendRefundConfirmationOnce } from "@/lib/email/send-refund-confirmation";
 
 export async function createComplimentaryTicket(formData: FormData) {
   await requireAdmin(); const supabase = await createClient(); if (!supabase) return;
@@ -55,8 +56,24 @@ export async function refundOrder(orderId: string) {
   if (order.payment_provider === "mock" && result.status === "completed") {
     const { error } = await admin.rpc("finalize_ticket_refund", { p_provider_refund_id: result.providerRefundId });
     if (error) redirect(`/admin/orders/${orderId}?error=refund`);
+    await sendRefundConfirmationOnce(refund.id);
     revalidatePath(`/admin/orders/${orderId}`); revalidatePath("/admin/orders"); revalidatePath(`/events`);
     redirect(`/admin/orders/${orderId}?refund=completed`);
   }
   revalidatePath(`/admin/orders/${orderId}`); redirect(`/admin/orders/${orderId}?refund=submitted`);
+}
+
+export async function resendTransactionalEmail(orderId: string, type: "tickets" | "refund", refundId?: string) {
+  await requireAdmin();
+  if (type === "refund") {
+    const admin = createAdminClient();
+    if (!admin || !refundId) redirect(`/admin/orders/${orderId}?email=failed`);
+    const { data: refund } = await admin.from("refunds").select("order_id").eq("id", refundId).maybeSingle();
+    if (!refund || refund.order_id !== orderId) redirect(`/admin/orders/${orderId}?email=failed`);
+  }
+  const result = type === "refund" && refundId
+    ? await resendRefundConfirmation(refundId)
+    : await resendOrderTickets(orderId);
+  revalidatePath(`/admin/orders/${orderId}`);
+  redirect(`/admin/orders/${orderId}?email=${result.status === "sent" ? "sent" : "failed"}`);
 }
