@@ -4,15 +4,33 @@ import test from "node:test";
 import { MockPaymentProvider } from "../lib/payments/mock-provider";
 import { buildRefundIdempotencyKey, buildTicketNumber, canReserveInventory, generateVerificationToken, nextOrderStatus, publicAvailabilityStatus } from "../lib/ticketing/core";
 import { calculateServiceFeeCents, effectiveServiceFee, parseFixedFeeInput, parsePercentageFeeInput } from "../lib/ticketing/service-fee";
-import { isFriendlyPostalCode, normalizePostalCode } from "../lib/payments/postal-code";
+import { isFriendlyPostalCode, isSquarePostalCodeError, normalizePostalCode } from "../lib/payments/postal-code";
 
 test("Canadian postal codes accept compact or spaced input and normalize to uppercase", () => {
   assert.equal(normalizePostalCode("l2r3a6"), "L2R 3A6");
   assert.equal(normalizePostalCode("L2R 3A6"), "L2R 3A6");
   assert.equal(normalizePostalCode("m5v 2t6"), "M5V 2T6");
   assert.equal(normalizePostalCode("90210"), "90210");
-  for (const value of ["L2R 3A6", "L2R3A6", "M5V 2T6", "90210", "SW1A 1AA"]) assert.equal(isFriendlyPostalCode(value), true);
-  for (const value of ["<>123", "A/123", "12@34"]) assert.equal(isFriendlyPostalCode(value), false);
+  assert.equal(normalizePostalCode("12345-6789"), "12345-6789");
+  for (const value of ["L2R 3A6", "L2R3A6", "M5V 2T6", "90210", "12345-6789", "SW1A 1AA"]) assert.equal(isFriendlyPostalCode(value), true);
+  for (const value of ["", "<>123", "A/123", "12@34"]) assert.equal(isFriendlyPostalCode(value), false);
+});
+
+test("only structured Square postal errors request the fallback ZIP field", () => {
+  assert.equal(isSquarePostalCodeError([{ field: "postalCode", message: "Enter the ZIP code" }]), true);
+  assert.equal(isSquarePostalCodeError({ errors: [{ field: "Postal Code", type: "VALIDATION_ERROR" }] }), true);
+  assert.equal(isSquarePostalCodeError({ errorList: [{ message: "Billing postal code is required" }] }), true);
+  assert.equal(isSquarePostalCodeError([{ field: "cardNumber", message: "Card number is invalid" }]), false);
+  assert.equal(isSquarePostalCodeError(new Error("Square is temporarily unavailable")), false);
+});
+
+test("Square postal fallback is hidden initially and sent only after Square requests it", () => {
+  const checkout = readFileSync("components/ticketing/CheckoutPayment.tsx", "utf8");
+  assert.match(checkout, /provider === "square" && postalRequired && <label/);
+  assert.match(checkout, /\.\.\.\(postalRequired \? \{ postalCode: normalizedPostalCode \} : \{\}\)/);
+  assert.match(checkout, /if \(postalRequired\) await card\.configure\(\{ postalCode: normalizedPostalCode \}\)/);
+  assert.match(checkout, /if \(isSquarePostalCodeError\(result\.errors\)\) requestPostalCode\(\)/);
+  assert.doesNotMatch(checkout, /inputMode="numeric"|type="number"|replace\(\/\\D\/g/);
 });
 
 test("disabled service fees leave the ticket subtotal unchanged", () => {
