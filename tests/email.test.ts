@@ -14,7 +14,7 @@ const tickets = [
 ];
 
 test("ticket email renders a human date and every ticket", () => {
-  const rendered = renderTicketsReadyEmail({ branding, customerName: "Alex Morgan", orderNumber: "GOOM-ORD-000004", event, tickets, orderUrl: "https://goom.example/checkout/order", amounts: { subtotalCents: 8000, feesCents: 300, totalCents: 8300, currency: "CAD", paymentProvider: "square" } });
+  const rendered = renderTicketsReadyEmail({ branding, customerName: "Alex Morgan", orderNumber: "GOOM-ORD-000004", event, tickets, orderUrl: "https://goom.example/checkout/order", downloadAllUrl: "https://goom.example/api/orders/secure-token/tickets.pdf", amounts: { subtotalCents: 8000, feesCents: 300, totalCents: 8300, currency: "CAD", paymentProvider: "square" } });
   assert.equal(rendered.subject, "Your tickets for Michel Torres — GOOM-ORD-000004");
   assert.match(rendered.html, /Friday, October 30, 2026/);
   assert.doesNotMatch(rendered.html, /2026-10-30T20:00/);
@@ -23,6 +23,8 @@ test("ticket email renders a human date and every ticket", () => {
   assert.equal((rendered.html.match(/VIEW TICKET &amp; QR/g) || []).length, 2);
   assert.match(rendered.html, /Service fee/);
   assert.match(rendered.html, /\$83\.00/);
+  assert.match(rendered.html, /DOWNLOAD ALL TICKETS/);
+  assert.match(rendered.html, /secure-token\/tickets\.pdf/);
 });
 
 test("event time uses the configured Niagara timezone", () => {
@@ -39,7 +41,7 @@ test("refund template identifies affected tickets and invalidates them", () => {
 });
 
 test("complimentary template feels like an invitation without payment language", () => {
-  const rendered = renderComplimentaryEmail({ branding, customerName: "Alex Morgan", event, tickets: [tickets[0]], orderUrl: "https://goom.example/checkout/order" });
+  const rendered = renderComplimentaryEmail({ branding, customerName: "Alex Morgan", event, tickets: [tickets[0]], orderUrl: "https://goom.example/checkout/order", downloadAllUrl: "https://goom.example/api/orders/secure-token/tickets.pdf" });
   assert.match(rendered.subject, /Your complimentary ticket/);
   assert.match(rendered.html, /received a complimentary ticket/);
   assert.doesNotMatch(rendered.html, /\$0|Payment confirmed|payment provider/i);

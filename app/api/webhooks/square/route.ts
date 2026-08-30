@@ -2,6 +2,7 @@ import { WebhooksHelper } from "square";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendOrderTicketsOnce } from "@/lib/email/send-order-tickets";
 import { sendRefundConfirmationOnce } from "@/lib/email/send-refund-confirmation";
+import { squareTargetEnvironment } from "@/lib/payments/square-oauth";
 
 type SquareWebhook = { event_id?: string; type?: string; data?: { object?: { payment?: { id?: string; status?: string; reference_id?: string; order_id?: string; amount_money?: { amount?: number | string; currency?: string } }; refund?: { id?: string; status?: string; payment_id?: string; amount_money?: { amount?: number | string; currency?: string } } } } };
 
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
   let payload: SquareWebhook;
   try { payload = JSON.parse(body) as SquareWebhook; } catch { return new Response("Invalid JSON", { status: 400 }); }
   if (!payload.event_id || !payload.type) return new Response("Invalid event", { status: 400 });
-  const { error: eventError } = await admin.from("payment_webhook_events").insert({ provider: "square", provider_event_id: payload.event_id, event_type: payload.type, payload });
+  const { error: eventError } = await admin.from("payment_webhook_events").insert({ provider: "square", provider_event_id: payload.event_id, event_type: payload.type, payload, environment: squareTargetEnvironment() });
   if (eventError?.code === "23505") {
     const { data: existing } = await admin.from("payment_webhook_events").select("processed_at").eq("provider", "square").eq("provider_event_id", payload.event_id).maybeSingle();
     if (existing?.processed_at) return new Response("Already processed", { status: 200 });

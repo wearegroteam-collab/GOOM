@@ -48,6 +48,7 @@ export type OrderRecord = {
   customer_name: string; customer_email: string; customer_phone: string | null;
   subtotal_cents: number; fees_cents: number; total_cents: number; refunded_cents: number;
   currency: string; status: OrderStatus; payment_provider: string; payment_type: "sale" | "complimentary";
+  payment_environment: "mock" | "sandbox" | "production" | "manual";
   provider_payment_id: string | null; provider_order_id: string | null;
   reservation_expires_at: string | null; email_sent_at: string | null;
   created_at: string; paid_at: string | null; cancelled_at: string | null; refunded_at: string | null;
@@ -70,7 +71,7 @@ export type PaymentConnectionRecord = {
   created_at: string; updated_at: string;
 };
 export type RefundRecord = { id: string; order_id: string; amount_cents: number; currency: string; status: "pending"|"completed"|"failed"; provider_refund_id: string|null; idempotency_key: string; created_by: string|null; created_at: string; completed_at: string|null };
-export type PaymentWebhookEventRecord = { id: string; provider: string; provider_event_id: string; event_type: string; payload: Record<string, unknown>; processed_at: string|null; processing_error: string|null; created_at: string };
+export type PaymentWebhookEventRecord = { id: string; provider: string; provider_event_id: string; event_type: string; environment: "sandbox"|"production"; payload: Record<string, unknown>; processed_at: string|null; processing_error: string|null; created_at: string };
 export type EmailDeliveryRecord = { id: string; order_id: string; refund_id: string|null; template: string; type: "tickets_ready"|"refund_confirmed"|"complimentary"|"event_reminder"|"event_update"; recipient: string; provider: string; provider_message_id: string|null; status: "pending"|"sent"|"failed"; error: string|null; last_error: string|null; idempotency_key: string; attempt_number: number; metadata: Record<string,unknown>; created_at: string; sent_at: string|null };
 
 export type EventVideoRecord = {

@@ -4,6 +4,16 @@ import test from "node:test";
 import { MockPaymentProvider } from "../lib/payments/mock-provider";
 import { buildRefundIdempotencyKey, buildTicketNumber, canReserveInventory, generateVerificationToken, nextOrderStatus, publicAvailabilityStatus } from "../lib/ticketing/core";
 import { calculateServiceFeeCents, effectiveServiceFee, parseFixedFeeInput, parsePercentageFeeInput } from "../lib/ticketing/service-fee";
+import { isFriendlyPostalCode, normalizePostalCode } from "../lib/payments/postal-code";
+
+test("Canadian postal codes accept compact or spaced input and normalize to uppercase", () => {
+  assert.equal(normalizePostalCode("l2r3a6"), "L2R 3A6");
+  assert.equal(normalizePostalCode("L2R 3A6"), "L2R 3A6");
+  assert.equal(normalizePostalCode("m5v 2t6"), "M5V 2T6");
+  assert.equal(normalizePostalCode("90210"), "90210");
+  for (const value of ["L2R 3A6", "L2R3A6", "M5V 2T6", "90210", "SW1A 1AA"]) assert.equal(isFriendlyPostalCode(value), true);
+  for (const value of ["<>123", "A/123", "12@34"]) assert.equal(isFriendlyPostalCode(value), false);
+});
 
 test("disabled service fees leave the ticket subtotal unchanged", () => {
   assert.equal(calculateServiceFeeCents(4000, { enabled: false, type: "fixed", value: 300 }), 0);
@@ -81,6 +91,31 @@ test("Square charge and full refund flows use the persisted order total", () => 
   const refundAction = readFileSync("app/admin/(protected)/orders/actions.ts", "utf8");
   assert.match(chargeRoute, /amountCents:\s*order\.total_cents/);
   assert.match(refundAction, /refundPayment\(\{[\s\S]*?amountCents:\s*order\.total_cents/);
+});
+
+test("test-data reset is explicitly guarded and never deletes payment connections", () => {
+  const resetSql = readFileSync("scripts/reset-test-ticketing-data.sql", "utf8");
+  assert.match(resetSql, /app\.allow_test_data_reset/);
+  assert.match(resetSql, /app\.test_data_reset_scope/);
+  assert.match(resetSql, /app\.expected_test_order_count/);
+  assert.match(resetSql, /payment_environment not in \('mock','sandbox'\)/);
+  assert.match(resetSql, /setval\('public\.goom_order_number_seq', 1, false\)/);
+  assert.match(resetSql, /setval\('public\.goom_ticket_number_seq', 1, false\)/);
+  assert.doesNotMatch(resetSql, /delete from public\.payment_connections/i);
+});
+
+test("payment environment migration preserves the six-parameter ticket order RPC", () => {
+  const migration = readFileSync("supabase/migrations/202608300005_ticketing_payment_environment.sql", "utf8");
+  const orderRoute = readFileSync("app/api/ticketing/orders/route.ts", "utf8");
+
+  assert.match(migration, /create or replace function public\.create_ticket_order\(\s*p_event_id uuid,\s*p_customer_name text,\s*p_customer_email text,\s*p_customer_phone text,\s*p_payment_provider text,\s*p_items jsonb\s*\)/);
+  assert.match(migration, /revoke all on function public\.create_ticket_order\(uuid,text,text,text,text,jsonb\) from public/);
+  assert.match(migration, /grant execute on function public\.create_ticket_order\(uuid,text,text,text,text,jsonb\) to anon, authenticated/);
+  assert.doesNotMatch(migration, /create_ticket_order\(uuid,text,text,text,text,text,jsonb\)/);
+  assert.doesNotMatch(migration, /p_payment_environment/);
+  assert.match(migration, /from public\.payment_connections\s+where provider = 'square'/);
+  assert.match(migration, /payment_provider, payment_environment, reservation_expires_at/);
+  assert.doesNotMatch(orderRoute, /p_payment_environment/);
 });
 
 test("refund idempotency key is stable per order", () => {

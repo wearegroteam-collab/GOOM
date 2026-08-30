@@ -32,9 +32,10 @@ async function sendOrderEmail(orderId: string, manualRetry: boolean) {
     }));
     const eventDetails = { name: event.title, date: event.date, venue: event.venue, address: event.address, city: event.city };
     const orderUrl = `${branding.siteUrl}/checkout/${order.public_token}`;
+    const downloadAllUrl = `${branding.siteUrl}/api/orders/${order.public_token}/tickets.pdf`;
     const type: EmailType = order.payment_type === "complimentary" ? "complimentary" : "tickets_ready";
     const rendered = type === "complimentary"
-      ? renderComplimentaryEmail({ branding, customerName: order.customer_name, event: eventDetails, tickets: ticketItems, orderUrl })
+      ? renderComplimentaryEmail({ branding, customerName: order.customer_name, event: eventDetails, tickets: ticketItems, orderUrl, downloadAllUrl })
       : renderTicketsReadyEmail({
           branding,
           customerName: order.customer_name,
@@ -42,6 +43,7 @@ async function sendOrderEmail(orderId: string, manualRetry: boolean) {
           event: eventDetails,
           tickets: ticketItems,
           orderUrl,
+          downloadAllUrl,
           amounts: { subtotalCents: order.subtotal_cents, feesCents: order.fees_cents, totalCents: order.total_cents, currency: order.currency, paymentProvider: order.payment_provider },
         });
     const baseKey = automaticDeliveryKey(type, order.id);
