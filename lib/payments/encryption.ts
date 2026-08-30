@@ -9,6 +9,10 @@ function encryptionKey() {
   return key;
 }
 
+export function assertPaymentEncryptionConfigured() {
+  encryptionKey();
+}
+
 export function encryptSecret(value: string) {
   const iv = randomBytes(12);
   const cipher = createCipheriv("aes-256-gcm", encryptionKey(), iv);

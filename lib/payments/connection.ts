@@ -12,14 +12,18 @@ export function squareEnvironment() { return squareTargetEnvironment() === "prod
 export async function getSquareConnection() {
   const admin = createAdminClient();
   if (!admin) return null;
-  const { data } = await admin.from("payment_connections").select("*").eq("provider", "square").maybeSingle();
+  const { data, error } = await admin.from("payment_connections").select("*").eq("provider", "square").maybeSingle();
+  if (error) {
+    console.error("[Square OAuth]", JSON.stringify({ event: "connection_read_failed", message: error.message }));
+    return null;
+  }
   return data as PaymentConnectionRecord | null;
 }
 
 export async function getSquareAccess() {
   const admin = createAdminClient();
   const connection = await getSquareConnection();
-  if (!admin || !connection?.connected || !connection.access_token_encrypted || !connection.location_reference) return null;
+  if (!admin || !connection?.connected || connection.environment !== squareTargetEnvironment() || !connection.access_token_encrypted || !connection.location_reference) return null;
   let accessToken = decryptSecret(connection.access_token_encrypted);
   const refreshToken = connection.refresh_token_encrypted ? decryptSecret(connection.refresh_token_encrypted) : null;
   const expiresSoon = connection.token_expires_at && new Date(connection.token_expires_at).getTime() < Date.now() + 5 * 24 * 60 * 60 * 1000;

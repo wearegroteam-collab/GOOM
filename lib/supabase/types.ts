@@ -61,6 +61,7 @@ export type PaymentConnectionRecord = {
   id: string; provider: string; account_reference: string | null; account_name: string | null;
   location_reference: string | null; location_name: string | null; access_token_encrypted: string | null;
   refresh_token_encrypted: string | null; token_expires_at: string | null; connected: boolean;
+  environment: "sandbox" | "production";
   created_at: string; updated_at: string;
 };
 export type RefundRecord = { id: string; order_id: string; amount_cents: number; currency: string; status: "pending"|"completed"|"failed"; provider_refund_id: string|null; idempotency_key: string; created_by: string|null; created_at: string; completed_at: string|null };
