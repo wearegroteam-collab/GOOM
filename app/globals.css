@@ -296,6 +296,10 @@ img { object-fit: cover; }
 .ticket-type-list { display: grid; gap: 12px; }
 .ticket-type-public { min-height: 126px; padding: 23px 26px; display: grid; grid-template-columns: 1fr auto auto; gap: 28px; align-items: center; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; background: #11151d; }
 .ticket-type-public.is-unavailable { background: #0e1117; }
+.ticket-availability-badge { width: fit-content; margin-top: 10px; padding: 5px 8px; display: inline-flex; border: 1px solid rgba(223,183,104,.28); border-radius: 999px; background: rgba(223,183,104,.08); color: #d7bd85; font-size: 8px; font-weight: 800; letter-spacing: .12em; line-height: 1; text-transform: uppercase; }
+.ticket-availability-badge.availability-selling_fast { border-color: rgba(223,183,104,.42); background: rgba(223,183,104,.13); color: #e1bf79; }
+.ticket-availability-badge.availability-last_tickets { border-color: rgba(205,147,85,.45); background: rgba(205,147,85,.13); color: #d9a66f; }
+.ticket-availability-badge.availability-sold_out { border-color: rgba(151,157,170,.25); background: rgba(151,157,170,.08); color: #969ca8; }
 .ticket-type-public > div:first-child { display: grid; grid-template-columns: auto 1fr; column-gap: 13px; align-items: center; }
 .ticket-type-public svg { color: #a77a2b; }
 .ticket-type-public h3 { margin: 0; font-size: 20px; }

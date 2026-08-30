@@ -2,6 +2,7 @@ export type EventStatus = "draft" | "published" | "past";
 export type VideoProvider = "youtube" | "vimeo" | "instagram" | "mp4" | "embed";
 export type VideoAspectRatio = "auto" | "16:9" | "9:16" | "4:5" | "1:1";
 export type HeroMediaType = "image" | "video";
+export type PublicAvailabilityStatus = "automatic" | "available" | "selling_fast" | "last_tickets" | "sold_out" | "hidden";
 
 export type EventRecord = {
   id: string;
@@ -32,6 +33,7 @@ export type TicketTypeRecord = {
   price_cents: number; currency: string; quantity_total: number;
   quantity_sold: number; quantity_reserved: number; sales_start: string | null;
   sales_end: string | null; active: boolean; sort_order: number;
+  public_availability_status?: PublicAvailabilityStatus;
   created_at: string; updated_at: string;
 };
 

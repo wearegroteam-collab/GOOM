@@ -3,12 +3,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/admin/auth";
 import { createClient } from "@/lib/supabase/server";
+import type { PublicAvailabilityStatus } from "@/lib/supabase/types";
+
+const availabilityStatuses: PublicAvailabilityStatus[] = ["automatic", "available", "selling_fast", "last_tickets", "sold_out", "hidden"];
 
 export async function saveTicketType(eventId: string, id: string | null, formData: FormData) {
   await requireAdmin(); const supabase = await createClient(); if (!supabase) return;
   const price = Number(formData.get("price")); const total = Number(formData.get("quantity_total"));
   if (!Number.isFinite(price) || price < 0 || !Number.isInteger(total) || total < 0) redirect(`/admin/events/${eventId}/tickets?error=values`);
-  const payload = { event_id: eventId, name: String(formData.get("name") || "").trim(), description: String(formData.get("description") || "").trim() || null, price_cents: Math.round(price * 100), currency: String(formData.get("currency") || "CAD").toUpperCase(), quantity_total: total, sales_start: formData.get("sales_start") ? new Date(String(formData.get("sales_start"))).toISOString() : null, sales_end: formData.get("sales_end") ? new Date(String(formData.get("sales_end"))).toISOString() : null, active: formData.get("active") === "on", sort_order: Number(formData.get("sort_order")) || 0 };
+  const requestedAvailability = String(formData.get("public_availability_status") || "automatic") as PublicAvailabilityStatus;
+  const payload = { event_id: eventId, name: String(formData.get("name") || "").trim(), description: String(formData.get("description") || "").trim() || null, price_cents: Math.round(price * 100), currency: String(formData.get("currency") || "CAD").toUpperCase(), quantity_total: total, sales_start: formData.get("sales_start") ? new Date(String(formData.get("sales_start"))).toISOString() : null, sales_end: formData.get("sales_end") ? new Date(String(formData.get("sales_end"))).toISOString() : null, active: formData.get("active") === "on", sort_order: Number(formData.get("sort_order")) || 0, public_availability_status: availabilityStatuses.includes(requestedAvailability) ? requestedAvailability : "automatic" };
   if (!payload.name) redirect(`/admin/events/${eventId}/tickets?error=name`);
   if (id) await supabase.from("ticket_types").update(payload).eq("id", id).eq("event_id", eventId); else await supabase.from("ticket_types").insert(payload);
   revalidatePath(`/admin/events/${eventId}/tickets`); revalidatePath("/events"); redirect(`/admin/events/${eventId}/tickets?saved=1`);

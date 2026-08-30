@@ -18,14 +18,45 @@ export async function createComplimentaryTicket(formData: FormData) {
 }
 
 export async function refundOrder(orderId: string) {
-  await requireAdmin(); const admin = createAdminClient(); if (!admin) return;
+  const adminUser = await requireAdmin(); const admin = createAdminClient(); if (!admin) return;
   const { data: order } = await admin.from("orders").select("*").eq("id", orderId).single();
+  if (order?.status === "refunded") redirect(`/admin/orders/${orderId}?already_refunded=1`);
   if (!order || order.status !== "paid" || !order.provider_payment_id || order.total_cents <= 0) redirect(`/admin/orders/${orderId}?error=refund`);
   const idempotencyKey = buildRefundIdempotencyKey(order.id); const access = order.payment_provider === "square" ? await getSquareAccess() : null;
-  const provider = order.payment_provider === "square" && access ? new SquareProvider(access.accessToken, access.locationId) : process.env.NODE_ENV !== "production" && order.payment_provider === "mock" ? new MockPaymentProvider() : null;
+  const provider = order.payment_provider === "square" && access ? new SquareProvider(access.accessToken, access.locationId) : order.payment_provider === "mock" && process.env.PAYMENT_PROVIDER === "mock" ? new MockPaymentProvider() : null;
   if (!provider) redirect(`/admin/orders/${orderId}?error=refund`);
-  const { data: refund } = await admin.from("refunds").insert({ order_id: order.id, amount_cents: order.total_cents, currency: order.currency, idempotency_key: idempotencyKey, created_by: (await requireAdmin()).id }).select("id").single();
+  const { data: activeRefund } = await admin.from("refunds").select("*").eq("order_id", order.id).in("status", ["pending", "completed"]).maybeSingle();
+  if (activeRefund?.status === "completed") redirect(`/admin/orders/${orderId}?already_refunded=1`);
+  let refund = activeRefund;
+  if (!refund) {
+    const { data: existingKey } = await admin.from("refunds").select("*").eq("idempotency_key", idempotencyKey).maybeSingle();
+    refund = existingKey;
+  }
+  if (!refund) {
+    const { data } = await admin.from("refunds").insert({ order_id: order.id, amount_cents: order.total_cents, currency: order.currency, idempotency_key: idempotencyKey, created_by: adminUser.id }).select("*").single();
+    refund = data;
+  } else if (refund.status === "failed") {
+    const { data } = await admin.from("refunds").update({ status: "pending" }).eq("id", refund.id).select("*").single();
+    refund = data;
+  }
   if (!refund) redirect(`/admin/orders/${orderId}?error=refund`);
-  try { const result = await provider.refundPayment({ paymentId: order.provider_payment_id, amountCents: order.total_cents, currency: order.currency, idempotencyKey, reason: `GOOM refund ${order.order_number}` }); await admin.from("refunds").update({ provider_refund_id: result.providerRefundId, status: result.status === "completed" && order.payment_provider !== "mock" ? "pending" : result.status }).eq("id", refund.id); if (order.payment_provider === "mock" && result.status === "completed") await admin.rpc("finalize_ticket_refund", { p_provider_refund_id: result.providerRefundId }); } catch { await admin.from("refunds").update({ status: "failed" }).eq("id", refund.id); redirect(`/admin/orders/${orderId}?error=refund`); }
-  revalidatePath(`/admin/orders/${orderId}`); redirect(`/admin/orders/${orderId}?refund=1`);
+  let result;
+  try {
+    result = await provider.refundPayment({ paymentId: order.provider_payment_id, amountCents: order.total_cents, currency: order.currency, idempotencyKey, reason: `GOOM refund ${order.order_number}` });
+  } catch {
+    await admin.from("refunds").update({ status: "failed" }).eq("id", refund.id);
+    redirect(`/admin/orders/${orderId}?error=refund`);
+  }
+  if (result.status === "failed") {
+    await admin.from("refunds").update({ provider_refund_id: result.providerRefundId, status: "failed" }).eq("id", refund.id);
+    redirect(`/admin/orders/${orderId}?error=refund`);
+  }
+  await admin.from("refunds").update({ provider_refund_id: result.providerRefundId, status: "pending" }).eq("id", refund.id);
+  if (order.payment_provider === "mock" && result.status === "completed") {
+    const { error } = await admin.rpc("finalize_ticket_refund", { p_provider_refund_id: result.providerRefundId });
+    if (error) redirect(`/admin/orders/${orderId}?error=refund`);
+    revalidatePath(`/admin/orders/${orderId}`); revalidatePath("/admin/orders"); revalidatePath(`/events`);
+    redirect(`/admin/orders/${orderId}?refund=completed`);
+  }
+  revalidatePath(`/admin/orders/${orderId}`); redirect(`/admin/orders/${orderId}?refund=submitted`);
 }

@@ -10,6 +10,7 @@ import { getEventVideos, getPublishedEventBySlug } from "@/lib/site-data";
 import { createClient } from "@/lib/supabase/server";
 import { TicketSelector } from "@/components/ticketing/TicketSelector";
 import type { TicketTypeRecord } from "@/lib/supabase/types";
+import { publicAvailabilityStatus } from "@/lib/ticketing/core";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -40,7 +41,7 @@ export default async function EventDetailPage({ params }: Props) {
   const { data: ticketData } = event.sales_enabled && supabase
     ? await supabase.from("ticket_types").select("*").eq("event_id", event.id).eq("active", true).order("sort_order", { ascending: true })
     : { data: [] };
-  const ticketTypes = (ticketData || []) as TicketTypeRecord[];
+  const ticketTypes = ((ticketData || []) as TicketTypeRecord[]).filter((ticket) => publicAvailabilityStatus(ticket) !== "hidden");
   // Events created before the hero selector existed automatically promote
   // their first video. Once an administrator saves an explicit choice, that
   // image/video preference is respected.

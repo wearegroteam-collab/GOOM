@@ -42,6 +42,6 @@ export async function getSquareAccess() {
 }
 
 export function ticketingProviderName() {
-  if (process.env.PAYMENT_PROVIDER === "mock" && process.env.NODE_ENV !== "production") return "mock" as const;
+  if (process.env.PAYMENT_PROVIDER === "mock") return "mock" as const;
   return "square" as const;
 }

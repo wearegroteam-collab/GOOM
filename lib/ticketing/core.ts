@@ -1,7 +1,33 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 
 export const RESERVATION_MINUTES = 15;
 export const MAX_TICKETS_PER_ORDER = 12;
+export const SELLING_FAST_THRESHOLD_PERCENT = 30;
+export const LAST_TICKETS_THRESHOLD_PERCENT = 10;
+
+export type PublicAvailabilityStatus = "automatic" | "available" | "selling_fast" | "last_tickets" | "sold_out" | "hidden";
+export type PublicAvailabilityLabel = Exclude<PublicAvailabilityStatus, "automatic">;
+
+export function publicAvailabilityStatus(ticket: {
+  quantity_total: number;
+  quantity_sold: number;
+  quantity_reserved: number;
+  public_availability_status?: PublicAvailabilityStatus;
+}): PublicAvailabilityLabel {
+  const override = ticket.public_availability_status || "automatic";
+  if (override === "hidden") return "hidden";
+  const available = Math.max(0, ticket.quantity_total - ticket.quantity_sold - ticket.quantity_reserved);
+  if (available === 0 || override === "sold_out") return "sold_out";
+  if (override !== "automatic") return override;
+  const percentage = ticket.quantity_total > 0 ? (available / ticket.quantity_total) * 100 : 0;
+  if (percentage > SELLING_FAST_THRESHOLD_PERCENT) return "available";
+  if (percentage > LAST_TICKETS_THRESHOLD_PERCENT) return "selling_fast";
+  return "last_tickets";
+}
+
+export function publicAvailabilityLabel(status: PublicAvailabilityLabel) {
+  return ({ available: "Available", selling_fast: "Selling fast", last_tickets: "Last tickets", sold_out: "Sold out", hidden: "Hidden" } as const)[status];
+}
 
 export function money(cents: number, currency = "CAD", locale = "en-CA") {
   return new Intl.NumberFormat(locale, { style: "currency", currency }).format(cents / 100);
@@ -21,7 +47,7 @@ export function buildPaymentIdempotencyKey(orderId: string) {
 }
 
 export function buildRefundIdempotencyKey(orderId: string) {
-  return `goom-ref-${createHash("sha256").update(`${orderId}:${randomUUID()}`).digest("hex")}`.slice(0, 45);
+  return `goom-ref-${createHash("sha256").update(orderId).digest("hex")}`.slice(0, 45);
 }
 
 export function validateCart(items: Array<{ ticketTypeId: string; quantity: number }>) {
