@@ -3,6 +3,7 @@ import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { EventForm } from "@/components/admin/EventForm";
 import { createClient } from "@/lib/supabase/server";
 import type { EventRecord, EventVideoRecord } from "@/lib/supabase/types";
+import Link from "next/link";
 
 export default async function EditEventPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,7 +16,7 @@ export default async function EditEventPage({ params }: { params: Promise<{ id: 
   if (!data) notFound();
   const event = data as EventRecord;
   return <>
-    <AdminPageHeader eyebrow="Events" title={`Edit ${event.title}`} description="Update event details, ticketing, promotional media and publication status." />
+    <AdminPageHeader eyebrow="Events" title={`Edit ${event.title}`} description="Update event details, ticketing, promotional media and publication status." action={<Link className="admin-primary-button" href={`/admin/events/${event.id}/tickets`}>Manage tickets</Link>} />
     <EventForm event={event} eventVideos={(videoData || []) as EventVideoRecord[]} />
   </>;
 }

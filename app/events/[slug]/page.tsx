@@ -7,6 +7,9 @@ import { ResponsiveVideo } from "@/components/ResponsiveVideo";
 import { ShowpassWidget } from "@/components/ShowpassWidget";
 import { parseShowpassWidgetCode } from "@/lib/showpass";
 import { getEventVideos, getPublishedEventBySlug } from "@/lib/site-data";
+import { createClient } from "@/lib/supabase/server";
+import { TicketSelector } from "@/components/ticketing/TicketSelector";
+import type { TicketTypeRecord } from "@/lib/supabase/types";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -33,6 +36,11 @@ export default async function EventDetailPage({ params }: Props) {
   const event = await getPublishedEventBySlug(slug);
   if (!event) notFound();
   const videos = await getEventVideos(event.id);
+  const supabase = await createClient();
+  const { data: ticketData } = event.sales_enabled && supabase
+    ? await supabase.from("ticket_types").select("*").eq("event_id", event.id).eq("active", true).order("sort_order", { ascending: true })
+    : { data: [] };
+  const ticketTypes = (ticketData || []) as TicketTypeRecord[];
   // Events created before the hero selector existed automatically promote
   // their first video. Once an administrator saves an explicit choice, that
   // image/video preference is respected.
@@ -57,6 +65,7 @@ export default async function EventDetailPage({ params }: Props) {
           {event.ticket_url && !showpassConfig && <a href={event.ticket_url} target="_blank" rel="noreferrer" className="button">Buy tickets</a>}
         </div>
       </section>
+      {event.sales_enabled && ticketTypes.length > 0 && <section className="event-ticket-section goom-ticketing-section inner-section"><TicketSelector eventId={event.id} ticketTypes={ticketTypes} nowIso={new Date().toISOString()} /></section>}
       {event.info_banner_url && <section className="event-info-banner-section" aria-label={`${event.title} additional information`}>
         <div className="event-info-banner"><Image src={event.info_banner_url} alt={`${event.title} event information`} fill sizes="(max-width: 767px) 100vw, 1240px" /></div>
       </section>}
@@ -64,7 +73,7 @@ export default async function EventDetailPage({ params }: Props) {
         <div className="event-section-intro"><p className="section-eyebrow"><span />Promotional media</p><h2>Watch the <em>experience.</em></h2></div>
         <div className={`event-video-grid event-video-count-${Math.min(secondaryVideos.length, 3)}`}>{secondaryVideos.map((video, index) => <ResponsiveVideo key={video.id} video={video} title={`${event.title} promotional video ${index + 1}`} />)}</div>
       </section>}
-      {showpassConfig && <section className="event-ticket-section inner-section">
+      {showpassConfig && ticketTypes.length === 0 && <section className="event-ticket-section inner-section">
         <div className="event-section-intro"><p className="section-eyebrow dark"><span />Official ticketing</p><h2>Get your <em>tickets.</em></h2><p>Choose your tickets securely through Showpass without leaving the event experience.</p></div>
         <div className="showpass-shell"><ShowpassWidget config={showpassConfig} title={event.title} /></div>
         {event.ticket_url && <a href={event.ticket_url} target="_blank" rel="noreferrer" className="outline-link">Open ticket page instead</a>}

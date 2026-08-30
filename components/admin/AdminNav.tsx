@@ -1,14 +1,17 @@
 import Link from "next/link";
-import { CalendarDays, Images, LayoutDashboard, LogOut, PanelsTopLeft, Settings, Sparkles } from "lucide-react";
+import { CalendarDays, CreditCard, Images, LayoutDashboard, LogOut, PanelsTopLeft, ScanLine, Settings, ShoppingBag, Sparkles } from "lucide-react";
 import { logout } from "@/app/admin/(protected)/actions";
 
 const links = [
   ["Overview", "/admin", LayoutDashboard],
   ["Home banners", "/admin/home-banners", PanelsTopLeft],
   ["Events", "/admin/events", CalendarDays],
+  ["Orders", "/admin/orders", ShoppingBag],
+  ["Scanner", "/admin/scanner", ScanLine],
   ["Services", "/admin/services", Sparkles],
   ["Gallery", "/admin/gallery", Images],
   ["Settings", "/admin/settings", Settings],
+  ["Payments", "/admin/settings/payments", CreditCard],
 ] as const;
 
 export function AdminNav({ email }: { email?: string }) {
