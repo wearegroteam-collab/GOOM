@@ -3,11 +3,11 @@ import { SquareClient, SquareEnvironment } from "square";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { PaymentConnectionRecord } from "@/lib/supabase/types";
 import { decryptSecret, encryptSecret } from "./encryption";
+import { SQUARE_SCOPES, squareTargetEnvironment } from "./square-oauth";
 
-export const SQUARE_SCOPES = ["MERCHANT_PROFILE_READ", "PAYMENTS_READ", "PAYMENTS_WRITE"] as const;
+export { SQUARE_SCOPES, squareOAuthBase } from "./square-oauth";
 
-export function squareEnvironment() { return process.env.SQUARE_ENVIRONMENT === "production" ? SquareEnvironment.Production : SquareEnvironment.Sandbox; }
-export function squareOAuthBase() { return process.env.SQUARE_ENVIRONMENT === "production" ? "https://connect.squareup.com/oauth2" : "https://connect.squareupsandbox.com/oauth2"; }
+export function squareEnvironment() { return squareTargetEnvironment() === "production" ? SquareEnvironment.Production : SquareEnvironment.Sandbox; }
 
 export async function getSquareConnection() {
   const admin = createAdminClient();
