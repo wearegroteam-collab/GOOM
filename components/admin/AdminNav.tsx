@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, CreditCard, Images, LayoutDashboard, LogOut, PanelsTopLeft, ScanLine, Settings, ShoppingBag, Sparkles } from "lucide-react";
+import { CalendarDays, CreditCard, Images, LayoutDashboard, LogOut, PanelsTopLeft, ScanLine, Settings, ShoppingBag, Sparkles, Users } from "lucide-react";
 import { logout } from "@/app/admin/(protected)/actions";
 
 const links = [
@@ -7,6 +7,7 @@ const links = [
   ["Home banners", "/admin/home-banners", PanelsTopLeft],
   ["Events", "/admin/events", CalendarDays],
   ["Orders", "/admin/orders", ShoppingBag],
+  ["Customers", "/admin/customers", Users],
   ["Scanner", "/admin/scanner", ScanLine],
   ["Services", "/admin/services", Sparkles],
   ["Gallery", "/admin/gallery", Images],

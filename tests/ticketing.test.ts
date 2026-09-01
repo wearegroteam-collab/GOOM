@@ -5,6 +5,8 @@ import { MockPaymentProvider } from "../lib/payments/mock-provider";
 import { buildRefundIdempotencyKey, buildTicketNumber, canReserveInventory, generateVerificationToken, nextOrderStatus, publicAvailabilityStatus } from "../lib/ticketing/core";
 import { calculateServiceFeeCents, effectiveServiceFee, parseFixedFeeInput, parsePercentageFeeInput } from "../lib/ticketing/service-fee";
 import { isFriendlyPostalCode, isSquarePostalCodeError, normalizePostalCode } from "../lib/payments/postal-code";
+import { customerCommercialStatus, normalizeCustomerEmail, normalizeCustomerPhone, summarizeCustomerOrders } from "../lib/ticketing/customer";
+import { friendlySquarePaymentError, squareErrorDiagnostics } from "../lib/payments/square-errors";
 
 test("Canadian postal codes accept compact or spaced input and normalize to uppercase", () => {
   assert.equal(normalizePostalCode("l2r3a6"), "L2R 3A6");
@@ -72,6 +74,71 @@ test("verification tokens are unique", () => {
 test("inventory limit includes sold and temporarily reserved tickets", () => {
   assert.equal(canReserveInventory(200, 84, 15, 101), true);
   assert.equal(canReserveInventory(200, 84, 15, 102), false);
+});
+
+test("ten failed payments release every reservation without selling tickets", () => {
+  const state = { capacity: 10, sold: 0, reserved: 10 };
+  for (let index = 0; index < 10; index += 1) state.reserved -= 1;
+  assert.deepEqual(state, { capacity: 10, sold: 0, reserved: 0 });
+  assert.equal(state.capacity - state.sold - state.reserved, 10);
+});
+
+test("four successful and six failed payments convert only successful reservations", () => {
+  const state = { capacity: 10, sold: 0, reserved: 10 };
+  for (let index = 0; index < 4; index += 1) { state.reserved -= 1; state.sold += 1; }
+  for (let index = 0; index < 6; index += 1) state.reserved -= 1;
+  assert.deepEqual(state, { capacity: 10, sold: 4, reserved: 0 });
+  assert.equal(state.capacity - state.sold - state.reserved, 6);
+});
+
+test("the final ticket can be reserved by only one concurrent buyer", () => {
+  const state = { total: 1, sold: 0, reserved: 0 };
+  const reserve = () => { if (!canReserveInventory(state.total, state.sold, state.reserved, 1)) return false; state.reserved += 1; return true; };
+  assert.equal(reserve(), true);
+  assert.equal(reserve(), false);
+});
+
+test("customer identity and required phone are normalized without excessive restrictions", () => {
+  assert.equal(normalizeCustomerEmail(" Buyer@Example.COM "), "buyer@example.com");
+  assert.equal(normalizeCustomerPhone("9055551234"), "+19055551234");
+  assert.equal(normalizeCustomerPhone("(905) 555-1234"), "+19055551234");
+  assert.equal(normalizeCustomerPhone("+1 905 555 1234"), "+19055551234");
+  assert.equal(normalizeCustomerPhone("123"), null);
+  assert.equal(normalizeCustomerPhone("call-me-now"), null);
+});
+
+test("customer history consolidates paid, failed, expired and refunded attempts", () => {
+  const summary = summarizeCustomerOrders([
+    { status: "paid", total_cents: 4300, ticket_quantity: 1 },
+    { status: "failed", total_cents: 4300 },
+    { status: "expired", total_cents: 4300 },
+    { status: "refunded", total_cents: 4300, refunded_cents: 4300, ticket_quantity: 1 },
+  ]);
+  assert.equal(summary.totalOrders, 4);
+  assert.equal(summary.paidOrders, 1);
+  assert.equal(summary.failedOrders, 1);
+  assert.equal(summary.expiredOrders, 1);
+  assert.equal(summary.refundedOrders, 1);
+  assert.equal(summary.totalTickets, 2);
+  assert.equal(summary.totalSpentCents, 4300);
+  assert.equal(summary.status, "Mixed");
+  assert.equal(customerCommercialStatus([{ status: "failed", total_cents: 4000 }]), "Did not complete payment");
+});
+
+test("inventory migration preserves failed and expired attempts while releasing reservations", () => {
+  const migration = readFileSync("supabase/migrations/202609010001_customers_inventory_payment_failures.sql", "utf8");
+  assert.match(migration, /quantity_reserved = greatest\(0, quantity_reserved - item\.quantity\)/);
+  assert.match(migration, /status = 'expired'/);
+  assert.match(migration, /status = 'failed'/);
+  assert.match(migration, /quantity_sold = quantity_sold \+ item\.quantity|finalize_paid_ticket_order/);
+  assert.doesNotMatch(migration, /delete from public\.orders/i);
+});
+
+test("Square diagnostics preserve safe error codes and friendly messages", () => {
+  const diagnostic = squareErrorDiagnostics({ statusCode: 400, body: { errors: [{ category: "PAYMENT_METHOD_ERROR", code: "CARD_DECLINED", detail: "Card declined" }] } });
+  assert.equal(diagnostic.httpStatus, 400);
+  assert.equal(diagnostic.errors[0]?.code, "CARD_DECLINED");
+  assert.match(friendlySquarePaymentError(diagnostic.errors), /declined/i);
 });
 
 test("duplicate payment confirmation is idempotent at status level", () => {

@@ -42,17 +42,22 @@ export type TicketTypeRecord = {
   created_at: string; updated_at: string;
 };
 
-export type OrderStatus = "pending" | "paid" | "failed" | "cancelled" | "refunded" | "partially_refunded";
+export type OrderStatus = "pending" | "paid" | "failed" | "expired" | "cancelled" | "refunded" | "partially_refunded";
 export type OrderRecord = {
-  id: string; public_token: string; order_number: string; event_id: string;
+  id: string; public_token: string; order_number: string; event_id: string; customer_id: string | null;
   customer_name: string; customer_email: string; customer_phone: string | null;
   subtotal_cents: number; fees_cents: number; total_cents: number; refunded_cents: number;
   currency: string; status: OrderStatus; payment_provider: string; payment_type: "sale" | "complimentary";
   payment_environment: "mock" | "sandbox" | "production" | "manual";
   provider_payment_id: string | null; provider_order_id: string | null;
   reservation_expires_at: string | null; email_sent_at: string | null;
-  created_at: string; paid_at: string | null; cancelled_at: string | null; refunded_at: string | null;
+  created_at: string; paid_at: string | null; cancelled_at: string | null; expired_at: string | null; refunded_at: string | null;
+  payment_started_at: string | null; payment_failed_at: string | null;
+  payment_error_http_status: number | null; payment_error_category: string | null;
+  payment_error_code: string | null; payment_error_detail: string | null;
 };
+
+export type CustomerRecord = { id: string; normalized_email: string; full_name: string; email: string; phone: string | null; first_seen_at: string; last_seen_at: string; created_at: string; updated_at: string };
 
 export type OrderItemRecord = { id: string; order_id: string; ticket_type_id: string; quantity: number; unit_price_cents: number; total_cents: number; created_at: string };
 export type TicketStatus = "active" | "used" | "cancelled" | "refunded";
@@ -146,6 +151,7 @@ export type Database = {
       site_settings: Table<SiteSettingRecord>;
       admin_users: Table<AdminUserRecord>;
       ticket_types: Table<TicketTypeRecord>;
+      customers: Table<CustomerRecord>;
       orders: Table<OrderRecord>;
       order_items: Table<OrderItemRecord>;
       tickets: Table<TicketRecord>;
@@ -162,6 +168,8 @@ export type Database = {
       create_ticket_order: { Args: { p_event_id: string; p_customer_name: string; p_customer_email: string; p_customer_phone: string; p_payment_provider: string; p_items: { ticket_type_id: string; quantity: number }[] }; Returns: { id: string; public_token: string; order_number: string; total_cents: number; currency: string; expires_at: string } };
       finalize_paid_ticket_order: { Args: { p_order_id: string; p_provider_payment_id: string; p_provider_order_id?: string | null }; Returns: Record<string, unknown> };
       fail_ticket_order: { Args: { p_order_id: string }; Returns: undefined };
+      begin_ticket_payment: { Args: { p_order_id: string }; Returns: boolean };
+      release_expired_ticket_reservations: { Args: Record<string, never>; Returns: number };
       scan_ticket: { Args: { p_value: string; p_check_in?: boolean }; Returns: Record<string, unknown> };
       create_complimentary_tickets: { Args: { p_event_id: string; p_ticket_type_id: string; p_quantity: number; p_name: string; p_email: string }; Returns: { order_id: string; public_token: string; order_number: string } };
       finalize_ticket_refund: { Args: { p_provider_refund_id: string }; Returns: Record<string, unknown> };

@@ -51,7 +51,7 @@ export function CheckoutPayment({ orderToken, amountCents, currency, customerNam
     script = document.createElement("script"); script.src = config.environment === "production" ? "https://web.squarecdn.com/v1/square.js" : "https://sandbox.web.squarecdn.com/v1/square.js"; script.async = true; script.onload = async () => { if (cancelled || !window.Square) return; try { const payments = await window.Square.payments(config.applicationId, config.locationId); await payments.setLocale("en-CA"); const card = await payments.card(); await card.attach("#square-card-container"); cardRef.current = card; setProvider("square"); } catch { setProvider("error"); } }; document.head.appendChild(script);
     })(); return () => { cancelled = true; void cardRef.current?.destroy(); script?.remove(); }; }, []);
 
-  async function pay(sourceId: string) { setBusy(true); setError(""); const response = await fetch("/api/payments/charge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderToken, sourceId }) }); const data = await response.json(); if (!response.ok || data.status === "failed") { setError(data.error || "Payment could not be completed. Try again."); setBusy(false); return; } router.push(`/checkout/success?order=${encodeURIComponent(orderToken)}`); }
+  async function pay(sourceId: string, tokenizationStatus?: string) { setBusy(true); setError(""); const response = await fetch("/api/payments/charge", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ orderToken, sourceId, tokenizationStatus }) }); const data = await response.json(); if (!response.ok || data.status === "failed") { setError(data.error || "Payment could not be completed. Try again."); setBusy(false); return; } router.push(`/checkout/success?order=${encodeURIComponent(orderToken)}`); }
 
   function requestPostalCode() {
     setPostalRequired(true);
@@ -97,7 +97,7 @@ export function CheckoutPayment({ orderToken, amountCents, currency, customerNam
       });
 
       if (result.status === "OK" && result.token) {
-        await pay(result.token);
+        await pay(result.token, result.status);
         return;
       }
 

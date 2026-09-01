@@ -43,16 +43,19 @@ select id from public.tickets where order_id in (select id from _goom_reset_orde
 create temporary table _goom_reset_refunds on commit drop as
 select id from public.refunds where order_id in (select id from _goom_reset_orders);
 
+create temporary table _goom_reset_scans on commit drop as
+select id from public.ticket_scans where ticket_id in (select id from _goom_reset_tickets);
+
 -- Preview counts are returned by the SQL client before deletion completes.
 select
   (select count(*) from _goom_reset_orders) as orders_to_delete,
   (select count(*) from _goom_reset_tickets) as tickets_to_delete,
   (select count(*) from _goom_reset_refunds) as refunds_to_delete,
-  (select count(*) from public.ticket_scans) as scans_to_delete,
+  (select count(*) from _goom_reset_scans) as scans_to_delete,
   (select count(*) from public.email_deliveries where order_id in (select id from _goom_reset_orders)) as email_deliveries_to_delete,
   (select count(*) from public.payment_webhook_events where environment = 'sandbox') as sandbox_webhooks_to_delete;
 
-delete from public.ticket_scans;
+delete from public.ticket_scans where id in (select id from _goom_reset_scans);
 delete from public.tickets where id in (select id from _goom_reset_tickets);
 delete from public.refunds where id in (select id from _goom_reset_refunds);
 delete from public.email_deliveries where order_id in (select id from _goom_reset_orders);
@@ -61,10 +64,9 @@ delete from public.inventory_reservations where order_id in (select id from _goo
 delete from public.order_items where order_id in (select id from _goom_reset_orders);
 delete from public.orders where id in (select id from _goom_reset_orders);
 delete from public.audit_logs
-where entity_id in (select id from _goom_reset_orders)
-   or entity_id in (select id from _goom_reset_tickets)
-   or entity_id in (select id from _goom_reset_refunds)
-   or action in ('tickets.created','tickets.complimentary','ticket.checked_in','order.refunded');
+where (entity_type = 'order' and entity_id in (select id from _goom_reset_orders))
+   or (entity_type = 'ticket' and entity_id in (select id from _goom_reset_tickets))
+   or (entity_type = 'refund' and entity_id in (select id from _goom_reset_refunds));
 
 update public.ticket_types set quantity_sold = 0, quantity_reserved = 0;
 

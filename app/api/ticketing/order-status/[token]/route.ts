@@ -5,6 +5,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ tok
   const { token } = await params;
   const admin = createAdminClient();
   if (!admin) return NextResponse.json({ error: "Unavailable" }, { status: 503 });
+  await admin.rpc("release_expired_ticket_reservations");
   const { data: order } = await admin.from("orders").select("id,public_token,order_number,status,event_id").eq("public_token", token).maybeSingle();
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
   const { data: tickets } = order.status === "paid" ? await admin.from("tickets").select("ticket_number,verification_token").eq("order_id", order.id).order("ticket_number") : { data: [] };

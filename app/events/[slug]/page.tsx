@@ -12,6 +12,7 @@ import { TicketSelector } from "@/components/ticketing/TicketSelector";
 import type { TicketTypeRecord } from "@/lib/supabase/types";
 import { publicAvailabilityStatus } from "@/lib/ticketing/core";
 import { effectiveServiceFee, serviceFeeFromSettings } from "@/lib/ticketing/service-fee";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -38,6 +39,7 @@ export default async function EventDetailPage({ params }: Props) {
   const event = await getPublishedEventBySlug(slug);
   if (!event) notFound();
   const videos = await getEventVideos(event.id);
+  await createAdminClient()?.rpc("release_expired_ticket_reservations");
   const supabase = await createClient();
   const [{ data: ticketData }, { data: feeSettingsData }] = event.sales_enabled && supabase
     ? await Promise.all([
