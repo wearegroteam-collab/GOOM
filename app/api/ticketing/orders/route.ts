@@ -7,12 +7,13 @@ import { normalizeCustomerEmail, normalizeCustomerPhone } from "@/lib/ticketing/
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json() as { eventId?: string; name?: string; email?: string; phone?: string; items?: Array<{ ticketTypeId: string; quantity: number }> };
+    const body = await request.json() as { eventId?: string; name?: string; email?: string; phone?: string; paymentMethod?: "card" | "etransfer"; items?: Array<{ ticketTypeId: string; quantity: number }> };
     const phone = normalizeCustomerPhone(body.phone || "");
     const email = normalizeCustomerEmail(body.email || "");
     if (!body.eventId || !body.name?.trim() || !/^\S+@\S+\.\S+$/.test(email) || !phone || !Array.isArray(body.items)) return NextResponse.json({ error: "Please enter your full name, email and a valid phone number." }, { status: 400 });
     const items = validateCart(body.items);
-    const provider = ticketingProviderName();
+    if (body.paymentMethod && !["card", "etransfer"].includes(body.paymentMethod)) return NextResponse.json({ error: "Invalid payment method." }, { status: 400 });
+    const provider = body.paymentMethod === "etransfer" ? "etransfer" : ticketingProviderName();
     if (provider === "square") {
       const admin = createAdminClient();
       const { data: connection } = admin ? await admin.from("payment_connections").select("connected").eq("provider", "square").maybeSingle() : { data: null };

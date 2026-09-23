@@ -83,6 +83,8 @@ export async function saveEvent(id: string | null, _state: EventActionState, for
     service_fee_enabled: serviceFeeEnabled,
     service_fee_type: serviceFeeType,
     service_fee_value: serviceFeeValue,
+    card_payments_enabled: formData.get("card_payments_enabled") === "on",
+    etransfer_payments_enabled: formData.get("etransfer_payments_enabled") === "on",
     status,
     featured,
     updated_at: new Date().toISOString(),

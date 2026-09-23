@@ -47,6 +47,11 @@ export function EventForm({ event, eventVideos = [] }: { event?: EventRecord; ev
 
       <fieldset className="admin-event-section full">
         <legend>Ticketing</legend>
+        <div className="admin-form-grid full">
+          <label className="admin-check"><input name="card_payments_enabled" type="checkbox" defaultChecked={event?.card_payments_enabled !== false} />Accept credit/debit card</label>
+          <label className="admin-check"><input name="etransfer_payments_enabled" type="checkbox" defaultChecked={event?.etransfer_payments_enabled === true} />Accept e-Transfer</label>
+          <p className="admin-field-note full">Choose the payment methods customers can use for this event. Card payments continue through Square; e-Transfer orders require manual approval before tickets are issued.</p>
+        </div>
         <label>Ticket URL<input name="ticket_url" type="url" defaultValue={event?.ticket_url || ""} placeholder="https://…" /><small>Optional external purchase link and widget fallback.</small></label>
         <label>Showpass Widget Code<textarea name="showpass_widget_code" rows={9} defaultValue={event?.showpass_widget_code || ""} placeholder={'<script>showpass.tickets.eventPurchaseWidget("event-slug", {}, "container-id");</script>'} /><small>Paste the official Showpass widget/embed code. Only official Showpass resources are accepted.</small></label>
         <label className="admin-check"><input name="use_global_service_fee" type="checkbox" checked={useGlobalServiceFee} onChange={(input) => setUseGlobalServiceFee(input.target.checked)} />Use global service fee</label>

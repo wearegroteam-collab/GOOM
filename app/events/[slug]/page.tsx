@@ -74,7 +74,7 @@ export default async function EventDetailPage({ params }: Props) {
           {event.ticket_url && !showpassConfig && <a href={event.ticket_url} target="_blank" rel="noreferrer" className="button">Buy tickets</a>}
         </div>
       </section>
-      {event.sales_enabled && ticketTypes.length > 0 && <section className="event-ticket-section goom-ticketing-section inner-section"><TicketSelector eventId={event.id} ticketTypes={ticketTypes} nowIso={new Date().toISOString()} serviceFee={serviceFee} /></section>}
+      {event.sales_enabled && ticketTypes.length > 0 && (event.card_payments_enabled !== false || event.etransfer_payments_enabled === true) && <section className="event-ticket-section goom-ticketing-section inner-section"><TicketSelector eventId={event.id} ticketTypes={ticketTypes} nowIso={new Date().toISOString()} serviceFee={serviceFee} paymentMethods={{ card: event.card_payments_enabled !== false, etransfer: event.etransfer_payments_enabled === true }} /></section>}
       {event.info_banner_url && <section className="event-info-banner-section" aria-label={`${event.title} additional information`}>
         <div className="event-info-banner"><Image src={event.info_banner_url} alt={`${event.title} event information`} fill sizes="(max-width: 767px) 100vw, 1240px" /></div>
       </section>}

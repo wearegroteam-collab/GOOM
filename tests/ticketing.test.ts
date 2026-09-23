@@ -203,6 +203,22 @@ test("payment environment migration preserves the six-parameter ticket order RPC
   assert.doesNotMatch(orderRoute, /p_payment_environment/);
 });
 
+test("e-Transfer orders preserve card checkout and issue tickets only after admin approval", () => {
+  const migration = readFileSync("supabase/migrations/202609230001_event_payment_methods.sql", "utf8");
+  const orderRoute = readFileSync("app/api/ticketing/orders/route.ts", "utf8");
+  const adminActions = readFileSync("app/admin/(protected)/orders/actions.ts", "utf8");
+
+  assert.match(migration, /card_payments_enabled boolean not null default true/);
+  assert.match(migration, /etransfer_payments_enabled boolean not null default false/);
+  assert.match(migration, /expiry := now\(\) \+ interval '24 hours'/);
+  assert.match(migration, /p_payment_provider not in \('mock','square','etransfer'\)/);
+  assert.match(migration, /public\.finalize_paid_ticket_order\(selected_order\.id, 'etransfer-'/);
+  assert.match(migration, /if not public\.is_admin\(\) then raise exception 'ADMIN_REQUIRED'/);
+  assert.match(orderRoute, /body\.paymentMethod === "etransfer" \? "etransfer" : ticketingProviderName\(\)/);
+  assert.match(adminActions, /approve_etransfer_order/);
+  assert.match(adminActions, /sendOrderTicketsOnce\(orderId\)/);
+});
+
 test("refund idempotency key is stable per order", () => {
   assert.equal(buildRefundIdempotencyKey("order-1"), buildRefundIdempotencyKey("order-1"));
   assert.notEqual(buildRefundIdempotencyKey("order-1"), buildRefundIdempotencyKey("order-2"));

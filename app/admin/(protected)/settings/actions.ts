@@ -6,7 +6,7 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { createClient } from "@/lib/supabase/server";
 import { parseServiceFeeValue, type ServiceFeeType } from "@/lib/ticketing/service-fee";
 
-const keys = ["phone", "whatsapp", "email", "instagram", "facebook", "tiktok", "youtube"];
+const keys = ["phone", "whatsapp", "email", "etransfer_email", "etransfer_whatsapp", "instagram", "facebook", "tiktok", "youtube"];
 
 export async function saveSettings(formData: FormData) {
   await requireAdmin(); const supabase = await createClient(); if (!supabase) return;

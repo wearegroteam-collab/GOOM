@@ -25,6 +25,8 @@ export type EventRecord = {
   featured: boolean;
   capacity?: number | null;
   sales_enabled?: boolean;
+  card_payments_enabled?: boolean;
+  etransfer_payments_enabled?: boolean;
   use_global_service_fee?: boolean;
   service_fee_enabled?: boolean;
   service_fee_type?: ServiceFeeType;
@@ -55,6 +57,8 @@ export type OrderRecord = {
   payment_started_at: string | null; payment_failed_at: string | null;
   payment_error_http_status: number | null; payment_error_category: string | null;
   payment_error_code: string | null; payment_error_detail: string | null;
+  etransfer_submitted_at: string | null; etransfer_approved_at: string | null;
+  etransfer_approved_by: string | null;
 };
 
 export type CustomerRecord = { id: string; normalized_email: string; full_name: string; email: string; phone: string | null; first_seen_at: string; last_seen_at: string; created_at: string; updated_at: string };
@@ -168,6 +172,7 @@ export type Database = {
       create_ticket_order: { Args: { p_event_id: string; p_customer_name: string; p_customer_email: string; p_customer_phone: string; p_payment_provider: string; p_items: { ticket_type_id: string; quantity: number }[] }; Returns: { id: string; public_token: string; order_number: string; total_cents: number; currency: string; expires_at: string } };
       finalize_paid_ticket_order: { Args: { p_order_id: string; p_provider_payment_id: string; p_provider_order_id?: string | null }; Returns: Record<string, unknown> };
       fail_ticket_order: { Args: { p_order_id: string }; Returns: undefined };
+      approve_etransfer_order: { Args: { p_order_id: string }; Returns: Record<string, unknown> };
       begin_ticket_payment: { Args: { p_order_id: string }; Returns: boolean };
       release_expired_ticket_reservations: { Args: Record<string, never>; Returns: number };
       scan_ticket: { Args: { p_value: string; p_check_in?: boolean }; Returns: Record<string, unknown> };

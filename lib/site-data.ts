@@ -94,12 +94,14 @@ export const fallbackGallery: GalleryRecord[] = [
   created_at: now,
 }));
 
-export type SiteSettings = Record<"phone" | "whatsapp" | "email" | "instagram" | "facebook" | "tiktok" | "youtube", string>;
+export type SiteSettings = Record<"phone" | "whatsapp" | "email" | "etransfer_email" | "etransfer_whatsapp" | "instagram" | "facebook" | "tiktok" | "youtube", string>;
 
 export const fallbackSettings: SiteSettings = {
   phone: "+1 000 000 0000",
   whatsapp: "10000000000",
   email: "hello@goomevents.ca",
+  etransfer_email: "hello@goomevents.ca",
+  etransfer_whatsapp: "10000000000",
   instagram: "#",
   facebook: "#",
   tiktok: "#",

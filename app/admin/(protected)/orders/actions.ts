@@ -18,6 +18,18 @@ export async function createComplimentaryTicket(formData: FormData) {
   await sendOrderTicketsOnce(data.order_id); revalidatePath("/admin/orders"); redirect(`/admin/orders/${data.order_id}?created=1`);
 }
 
+export async function approveEtransferOrder(orderId: string) {
+  await requireAdmin();
+  const supabase = await createClient();
+  if (!supabase) redirect(`/admin/orders/${orderId}?etransfer=error`);
+  const { error } = await supabase.rpc("approve_etransfer_order", { p_order_id: orderId });
+  if (error) redirect(`/admin/orders/${orderId}?etransfer=error`);
+  const delivery = await sendOrderTicketsOnce(orderId);
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  redirect(`/admin/orders/${orderId}?etransfer=approved&email=${delivery.status === "sent" ? "sent" : "failed"}`);
+}
+
 export async function refundOrder(orderId: string) {
   const adminUser = await requireAdmin(); const admin = createAdminClient(); if (!admin) return;
   const { data: order } = await admin.from("orders").select("*").eq("id", orderId).single();
