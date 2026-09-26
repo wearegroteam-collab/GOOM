@@ -37,4 +37,9 @@ export class SquareProvider implements PaymentProvider {
     const refund = response.refund;
     return { providerRefundId: refund?.id || "", status: refund?.status === "COMPLETED" ? "completed" : refund?.status === "FAILED" || refund?.status === "REJECTED" ? "failed" : "pending" };
   }
+  async getRefundStatus(refundId: string): Promise<RefundResult> {
+    const response = await this.client.refunds.get({ refundId });
+    const refund = response.refund;
+    return { providerRefundId: refund?.id || refundId, status: refund?.status === "COMPLETED" ? "completed" : refund?.status === "FAILED" || refund?.status === "REJECTED" ? "failed" : "pending" };
+  }
 }

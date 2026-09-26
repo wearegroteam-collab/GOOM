@@ -178,6 +178,19 @@ test("Square charge and full refund flows use the persisted order total", () => 
   assert.match(refundAction, /refundPayment\(\{[\s\S]*?amountCents:\s*order\.total_cents/);
 });
 
+test("pending Square refunds can be reconciled without creating a duplicate refund", () => {
+  const squareProvider = readFileSync("lib/payments/square-provider.ts", "utf8");
+  const refundActions = readFileSync("app/admin/(protected)/orders/actions.ts", "utf8");
+  const orderPage = readFileSync("app/admin/(protected)/orders/[id]/page.tsx", "utf8");
+
+  assert.match(squareProvider, /client\.refunds\.get\(\{ refundId \}\)/);
+  assert.match(refundActions, /activeRefund\?\.status === "pending" && activeRefund\.provider_refund_id/);
+  assert.match(refundActions, /provider\.getRefundStatus\(activeRefund\.provider_refund_id\)/);
+  assert.match(refundActions, /if \(result\.status === "completed"\)[\s\S]*completeRefund/);
+  assert.match(orderPage, /Check Square refund status/);
+  assert.match(orderPage, /!pendingRefund && order\.status === "paid"/);
+});
+
 test("test-data reset is explicitly guarded and never deletes payment connections", () => {
   const resetSql = readFileSync("scripts/reset-test-ticketing-data.sql", "utf8");
   assert.match(resetSql, /app\.allow_test_data_reset/);

@@ -10,4 +10,7 @@ export class MockPaymentProvider implements PaymentProvider {
   async refundPayment({ idempotencyKey }: { paymentId: string; amountCents: number; currency: string; idempotencyKey: string; reason?: string }): Promise<RefundResult> {
     return { providerRefundId: `mock_refund_${idempotencyKey}`, status: "completed" };
   }
+  async getRefundStatus(refundId: string): Promise<RefundResult> {
+    return { providerRefundId: refundId, status: "completed" };
+  }
 }

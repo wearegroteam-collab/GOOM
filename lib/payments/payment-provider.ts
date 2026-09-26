@@ -10,4 +10,5 @@ export interface PaymentProvider {
   readonly name: "mock" | "square";
   createPayment(request: PaymentRequest): Promise<PaymentResult>;
   refundPayment(request: { paymentId: string; amountCents: number; currency: string; idempotencyKey: string; reason?: string }): Promise<RefundResult>;
+  getRefundStatus(refundId: string): Promise<RefundResult>;
 }
